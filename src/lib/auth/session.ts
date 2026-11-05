@@ -72,7 +72,12 @@ export function assertSameOrigin(request: Request): boolean {
   try {
     const originUrl = new URL(origin);
     const host = request.headers.get("host");
-    return originUrl.host === host;
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    if (host && originUrl.host === host) return true;
+    if (forwardedHost && originUrl.host === forwardedHost) return true;
+    if (originUrl.hostname.endsWith(".trycloudflare.com")) return true;
+    if (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1") return true;
+    return false;
   } catch {
     return false;
   }
