@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Chips de hígado de res">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123d2c"/>
+      <stop offset="1" stop-color="#206a4a"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b9683f"/>
+      <stop offset="1" stop-color="#7e3b23"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="640" cy="160" r="140" fill="#f5713f" opacity="0.35"/>
+  <ellipse cx="400" cy="630" rx="270" ry="42" fill="#000" opacity="0.28"/>
+  <ellipse cx="400" cy="540" rx="250" ry="110" fill="#f7ead9"/>
+  <ellipse cx="400" cy="528" rx="190" ry="78" fill="#efdcc5"/>
+  <g fill="url(#chip)" stroke="#5a2816" stroke-width="4">
+    <path d="M250 470c40-70 140-80 190-20 50 60 10 140-70 150-80 10-160-50-120-130Z"/>
+    <path d="M430 420c50-40 130-20 140 40 10 60-50 110-120 90-70-20-70-90-20-130Z"/>
+    <path d="M340 340c60-30 140 10 130 80-10 70-100 90-150 40-50-50-40-90 20-120Z"/>
+  </g>
+  <g fill="#e8a87c" opacity="0.7">
+    <circle cx="330" cy="500" r="7"/>
+    <circle cx="380" cy="545" r="5"/>
+    <circle cx="500" cy="460" r="6"/>
+    <circle cx="420" cy="390" r="5"/>
+  </g>
+  <g stroke="#8fd3a8" stroke-width="5" fill="none" opacity="0.5">
+    <path d="M120 300c40 60 30 140-20 200"/>
+    <path d="M690 360c-40 60-30 140 20 200"/>
+  </g>
+</svg>

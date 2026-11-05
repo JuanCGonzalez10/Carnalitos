@@ -61,7 +61,17 @@ export type IconName =
   | "grid"
   | "home"
   | "ticket"
-  | "money";
+  | "money"
+  | "paw"
+  | "cart"
+  | "bag"
+  | "bone"
+  | "truck"
+  | "package"
+  | "tag"
+  | "heart"
+  | "minus"
+  | "filter";
 
 const PATHS: Record<IconName, string> = {
   calendar: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
@@ -125,6 +135,16 @@ const PATHS: Record<IconName, string> = {
   home: "M3 11 12 3l9 8v10H3V11ZM9 21v-7h6v7",
   ticket: "M3 7h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4V7Zm11 0v12",
   money: "M3 6h18v12H3V6Zm9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 9h.01M18 15h.01",
+  paw: "M6 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm4-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm4 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm4 3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-6 5c-3 0-6 2-6 5 0 1.7 1.3 3 3 3 1 0 2-.5 3-.5s2 .5 3 .5c1.7 0 3-1.3 3-3 0-3-3-5-6-5Z",
+  cart: "M3 4h2l2.4 11.2A2 2 0 0 0 9.4 17H18a2 2 0 0 0 2-1.6L21.5 8H6M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+  bag: "M6 8h12l1.5 12.5h-15L6 8Zm3 0V6a3 3 0 0 1 6 0v2",
+  bone: "M9 12h6M7 9a3 3 0 1 0 0 6M17 9a3 3 0 1 1 0 6M7 9v6M17 9v6",
+  truck: "M3 6h11v10H3V6Zm11 3h4l3 3v4h-7V9ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+  package: "M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5 9-5M12 13v8",
+  tag: "M20.6 13.4 13 21l-9-9V4h8l8.6 8.6a1.4 1.4 0 0 1 0 2ZM7.5 7.5h.01",
+  heart: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8Z",
+  minus: "M5 12h14",
+  filter: "M3 5h18l-7 8v6l-4 2v-8L3 5Z",
 };
 
 export default function Icon({

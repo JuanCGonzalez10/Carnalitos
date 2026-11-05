@@ -1,266 +1,190 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 import Icon from "@/components/ui/Icon";
-import AdminStatCard from "@/components/admin/AdminStatCard";
 import PrintButton from "@/components/admin/PrintButton";
-import { query, queryOne } from "@/lib/db";
-import { formatCOP, todayInColombia } from "@/lib/booking/pricing";
-import { BOOKING_STATUS_LABELS, PAYMENT_METHOD_LABELS, formatDate } from "@/lib/utils/format";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { getReport } from "@/lib/data/orders";
+import { formatCOP, formatNumber } from "@/lib/store/format";
+import { formatDate } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Reportes · Panel",
+  robots: { index: false, follow: false },
 };
 
-function one(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) return value[0] ?? "";
-  return value ?? "";
+function isValidDate(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
 }
 
-function monthLabel(key: string) {
-  const [year, month] = key.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, 1));
-  return new Intl.DateTimeFormat("es-CO", { month: "short", year: "2-digit", timeZone: "UTC" })
-    .format(date)
-    .replace(".", "");
+function dateInput(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
 export default async function AdminReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<{ from?: string; to?: string }>;
 }) {
-  const sp = await searchParams;
-  const today = todayInColombia();
-  const defaultFrom = `${today.slice(0, 7)}-01`;
-  const from = one(sp.from) || defaultFrom;
-  const to = one(sp.to) || today;
-
-  const [summary, paymentsSummary, monthly, topGlampings, methods, statuses] = await Promise.all([
-    queryOne<{ bookings: number; total: number; paid: number; balance: number; avg: number; guests: number }>(
-      `select count(*)::int as bookings,
-              coalesce(sum(total), 0) as total,
-              coalesce(sum(paid_amount), 0) as paid,
-              coalesce(sum(balance), 0) as balance,
-              coalesce(avg(total), 0) as avg,
-              coalesce(sum(guests), 0)::int as guests
-       from bookings
-       where check_in between $1::date and $2::date and status <> 'cancelled'`,
-      [from, to],
-    ),
-    queryOne<{ collected: number; payments: number }>(
-      `select coalesce(sum(amount), 0) as collected, count(*)::int as payments
-       from payments
-       where status = 'approved' and paid_at between $1::date and $2::date`,
-      [from, to],
-    ),
-    query<{ month: string; revenue: number; bookings: number }>(
-      `select to_char(date_trunc('month', b.created_at), 'YYYY-MM') as month,
-              coalesce(sum(b.total), 0) as revenue,
-              count(*)::int as bookings
-       from bookings b
-       where b.created_at >= date_trunc('month', current_date) - interval '11 months'
-         and b.status <> 'cancelled'
-       group by 1 order by 1 asc`,
-    ),
-    query<{ name: string; bookings: number; total: number; paid: number }>(
-      `select g.name, count(b.id)::int as bookings,
-              coalesce(sum(b.total), 0) as total,
-              coalesce(sum(b.paid_amount), 0) as paid
-       from bookings b join glampings g on g.id = b.glamping_id
-       where b.check_in between $1::date and $2::date and b.status <> 'cancelled'
-       group by g.id, g.name
-       order by total desc
-       limit 6`,
-      [from, to],
-    ),
-    query<{ method: string; count: number; total: number }>(
-      `select method, count(*)::int as count, coalesce(sum(amount), 0) as total
-       from payments
-       where status = 'approved' and paid_at between $1::date and $2::date
-       group by method order by total desc`,
-      [from, to],
-    ),
-    query<{ status: string; count: number }>(
-      `select status, count(*)::int as count
-       from bookings
-       where check_in between $1::date and $2::date
-       group by status order by count desc`,
-      [from, to],
-    ),
-  ]);
-
-  const stats = summary ?? { bookings: 0, total: 0, paid: 0, balance: 0, avg: 0, guests: 0 };
-  const paidInRange = paymentsSummary?.collected ?? 0;
-  const methodTotal = methods.reduce((sum, item) => sum + item.total, 0);
-  const maxRevenue = Math.max(...monthly.map((item) => item.revenue), 1);
-  const exportParams = new URLSearchParams({ from, to });
+  const params = await searchParams;
+  const today = new Date();
+  const from = isValidDate(params.from) ? params.from : dateInput(new Date(today.getFullYear(), today.getMonth(), 1));
+  const to = isValidDate(params.to) ? params.to : dateInput(today);
+  const report = await getReport(from, to);
+  const exportUrl = `/api/admin/reports/export?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  const maxProduct = Math.max(...report.topProducts.map((item) => item.total), 1);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="eyebrow">Inteligencia del negocio</p>
-          <h1 className="mt-2 text-3xl uppercase sm:text-4xl">Reportes</h1>
+          <p className="eyebrow">Analítica</p>
+          <h1 className="mt-2 text-3xl uppercase sm:text-4xl">Reportes de ventas</h1>
           <p className="mt-2 max-w-2xl text-sm text-ink/50">
-            Ingresos, reservas y rendimiento por alojamiento. Descarga el detalle en CSV o imprime el resumen ejecutivo.
+            Consulta el desempeño de la tienda entre dos fechas, revisa los pedidos y descarga la información en CSV.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <a href={`/api/admin/reports/export?${exportParams.toString()}`} className="btn-dark btn-sm">
-            <Icon name="download" className="h-3.5 w-3.5" /> Exportar CSV
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <a href={exportUrl} className="btn-jungle btn-sm">
+            <Icon name="download" className="h-3.5 w-3.5" /> Descargar CSV
           </a>
-          <PrintButton label="Imprimir reporte" />
+          <PrintButton />
         </div>
       </div>
 
-      <form method="get" className="admin-card">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div>
-            <label htmlFor="report-from" className="admin-label">Desde</label>
-            <input id="report-from" type="date" name="from" defaultValue={from} className="admin-input" />
-          </div>
-          <div>
-            <label htmlFor="report-to" className="admin-label">Hasta</label>
-            <input id="report-to" type="date" name="to" defaultValue={to} className="admin-input" />
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" className="btn-jungle btn-sm">
-              <Icon name="search" className="h-3.5 w-3.5" /> Aplicar
-            </button>
-            <Link href="/admin/reportes" className="btn-outline btn-sm">Este mes</Link>
-          </div>
-          <p className="pb-2 text-[11px] text-ink/40 sm:ml-auto">
-            Periodo: {formatDate(from)} — {formatDate(to)}
-          </p>
+      <form method="get" className="admin-card flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label htmlFor="report-from" className="admin-label">Desde</label>
+          <input id="report-from" type="date" name="from" defaultValue={from} className="admin-input" />
         </div>
+        <div className="flex-1">
+          <label htmlFor="report-to" className="admin-label">Hasta</label>
+          <input id="report-to" type="date" name="to" defaultValue={to} className="admin-input" />
+        </div>
+        <button type="submit" className="btn-dark btn-sm">
+          <Icon name="chart" className="h-3.5 w-3.5" /> Generar reporte
+        </button>
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminStatCard icon="money" label="Ingresos cobrados" value={formatCOP(paidInRange)} sub={`${paymentsSummary?.payments ?? 0} pagos en el periodo`} accent="jungle" />
-        <AdminStatCard icon="bookings" label="Reservas" value={stats.bookings} sub={`${stats.guests} huéspedes hospedados`} accent="lime" />
-        <AdminStatCard icon="chart" label="Valor reservado" value={formatCOP(stats.total)} sub={`Ticket promedio ${formatCOP(stats.avg)}`} accent="ink" />
-        <AdminStatCard icon="card" label="Saldo por cobrar" value={formatCOP(stats.balance)} sub="De reservas del periodo" accent="sun" />
+        {[
+          { label: "Pedidos", value: formatNumber(report.totalOrders), icon: "package" as const },
+          { label: "Unidades vendidas", value: formatNumber(report.units), icon: "bag" as const },
+          { label: "Ingresos cobrados", value: formatCOP(report.revenue), icon: "money" as const },
+          { label: "Saldo por cobrar", value: formatCOP(report.pending), icon: "card" as const },
+        ].map((item) => (
+          <div key={item.label} className="admin-card">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cream-100 text-jungle-700">
+              <Icon name={item.icon} className="h-4 w-4" />
+            </span>
+            <p className="mt-3 text-[9px] font-extrabold uppercase tracking-[0.14em] text-ink/35">{item.label}</p>
+            <p className="mt-1 font-display text-2xl leading-none">{item.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <section className="admin-card">
+      <p className="text-[11px] text-ink/40">
+        Periodo analizado: <strong>{formatDate(from)}</strong> a <strong>{formatDate(to)}</strong>. Ticket promedio:{" "}
+        <strong>{formatCOP(report.averageTicket)}</strong>.
+      </p>
+
+      <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr] xl:items-start">
+        <section className="admin-card overflow-hidden">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Tendencia</p>
-              <h2 className="mt-1 text-xl uppercase">Reservas y valor · últimos 12 meses</h2>
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Detalle</p>
+              <h2 className="mt-1 text-xl uppercase">Pedidos del periodo</h2>
             </div>
-            <span className="badge bg-cream-100 text-ink/50">Por fecha de creación</span>
-          </div>
-          <div className="mt-6 flex h-52 items-end gap-1.5 sm:gap-3">
-            {monthly.map((item) => (
-              <div key={item.month} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5" title={`${monthLabel(item.month)}: ${formatCOP(item.revenue)} · ${item.bookings} reservas`}>
-                <span className="text-[8px] font-bold text-ink/35">{item.revenue > 0 ? `${Math.round(item.revenue / 1000)}k` : "—"}</span>
-                <div
-                  className="w-full rounded-t-md bg-gradient-to-t from-jungle-700 to-jungle-500 transition hover:from-lime-500 hover:to-lime-400"
-                  style={{ height: `${Math.max(3, (item.revenue / maxRevenue) * 100)}%` }}
-                />
-                <span className="text-[8px] font-extrabold uppercase tracking-wider text-ink/40">{monthLabel(item.month)}</span>
-                <span className="text-[8px] text-ink/30">{item.bookings}</span>
-              </div>
-            ))}
-            {monthly.length === 0 && <p className="w-full pb-16 text-center text-sm text-ink/35">Sin datos para graficar.</p>}
-          </div>
-        </section>
-
-        <section className="admin-card">
-          <div>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Cartera</p>
-            <h2 className="mt-1 text-xl uppercase">Métodos de pago</h2>
-          </div>
-          <div className="mt-4 space-y-3">
-            {methods.map((item) => {
-              const percent = methodTotal > 0 ? Math.round((item.total / methodTotal) * 100) : 0;
-              return (
-                <div key={item.method}>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold">{PAYMENT_METHOD_LABELS[item.method] ?? item.method}</span>
-                    <span className="text-ink/50">{formatCOP(item.total)} · {percent}%</span>
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-cream-200">
-                    <div className="h-full rounded-full bg-jungle-500" style={{ width: `${percent}%` }} />
-                  </div>
-                  <p className="mt-0.5 text-[9px] text-ink/30">{item.count} pago{item.count === 1 ? "" : "s"}</p>
-                </div>
-              );
-            })}
-            {methods.length === 0 && <p className="py-8 text-center text-sm text-ink/35">No hay pagos registrados en el periodo.</p>}
-          </div>
-        </section>
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <section className="admin-card overflow-hidden">
-          <div>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Rendimiento</p>
-            <h2 className="mt-1 text-xl uppercase">Top alojamientos</h2>
+            <span className="badge bg-jungle-50 text-jungle-700">{report.totalOrders}</span>
           </div>
           <div className="mt-4 overflow-x-auto">
-            <table className="admin-table min-w-[520px]">
+            <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Alojamiento</th>
-                  <th>Reservas</th>
-                  <th>Valor reservado</th>
-                  <th>Cobrado</th>
-                  <th className="text-right">Cumplimiento</th>
+                  <th>Código</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Pago</th>
                 </tr>
               </thead>
               <tbody>
-                {topGlampings.map((item) => {
-                  const percent = item.total > 0 ? Math.round((item.paid / item.total) * 100) : 0;
-                  return (
-                    <tr key={item.name}>
-                      <td className="text-[12px] font-semibold">{item.name}</td>
-                      <td className="text-[12px] text-ink/60">{item.bookings}</td>
-                      <td className="text-[12px] font-semibold">{formatCOP(item.total)}</td>
-                      <td className="text-[12px] text-jungle-700">{formatCOP(item.paid)}</td>
-                      <td className="text-right">
-                        <span className="badge bg-cream-100 text-ink/55">{percent}%</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {topGlampings.length === 0 && (
-                  <tr><td colSpan={5} className="py-10 text-center text-sm text-ink/35">Sin reservas en el periodo.</td></tr>
+                {report.orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <Link href={`/admin/pedidos/${order.id}`} className="font-mono text-[11px] font-bold text-jungle-700 hover:underline">
+                        {order.code}
+                      </Link>
+                    </td>
+                    <td>
+                      <p className="text-[12px] font-semibold">{order.customerName}</p>
+                      <p className="text-[10px] text-ink/40">{order.itemsCount ?? 0} artículo{order.itemsCount === 1 ? "" : "s"}</p>
+                    </td>
+                    <td className="text-[11px] text-ink/50">{formatDate(order.createdAt)}</td>
+                    <td className="text-[12px] font-semibold">{formatCOP(order.total)}</td>
+                    <td><StatusBadge status={order.status} /></td>
+                    <td><StatusBadge status={order.paymentStatus} type="payment" /></td>
+                  </tr>
+                ))}
+                {report.orders.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-sm text-ink/35">
+                      No hay pedidos registrados en este periodo.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </section>
 
-        <section className="admin-card">
-          <div>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Operación</p>
-            <h2 className="mt-1 text-xl uppercase">Reservas por estado</h2>
-          </div>
-          <div className="mt-4 space-y-2">
-            {statuses.map((item) => (
-              <div key={item.status} className="flex items-center justify-between gap-3 rounded-lg bg-cream-50 px-3 py-2.5">
-                <span className="text-[11px] font-semibold">{BOOKING_STATUS_LABELS[item.status] ?? item.status}</span>
-                <span className="badge bg-white text-ink/60">{item.count}</span>
-              </div>
-            ))}
-            {statuses.length === 0 && <p className="py-8 text-center text-sm text-ink/35">Sin reservas en el periodo.</p>}
-          </div>
-          <div className="mt-5 rounded-lg border border-ink/[0.08] p-3">
-            <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Nota contable</p>
-            <p className="mt-1 text-[11px] leading-5 text-ink/45">
-              Los ingresos cobrados corresponden a pagos aprobados con fecha de pago dentro del periodo. El valor reservado incluye saldos pendientes.
-            </p>
-          </div>
-        </section>
-      </div>
+        <div className="space-y-5">
+          <section className="admin-card">
+            <div>
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Ranking</p>
+              <h2 className="mt-1 text-xl uppercase">Más vendidos</h2>
+            </div>
+            <div className="mt-4 space-y-3">
+              {report.topProducts.map((product) => (
+                <div key={product.name}>
+                  <div className="flex items-center justify-between gap-3 text-[11px]">
+                    <span className="truncate font-bold">{product.name}</span>
+                    <span className="shrink-0 font-semibold text-jungle-800">{formatCOP(product.total)}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-cream-200">
+                      <div className="h-full rounded-full bg-jungle-600" style={{ width: `${Math.max(4, (product.total / maxProduct) * 100)}%` }} />
+                    </div>
+                    <span className="text-[9px] font-semibold text-ink/40">{product.quantity} u.</span>
+                  </div>
+                </div>
+              ))}
+              {report.topProducts.length === 0 && (
+                <p className="py-6 text-center text-sm text-ink/35">Sin ventas en el periodo.</p>
+              )}
+            </div>
+          </section>
 
-      <div className="rounded-xl border border-ink/10 bg-white p-4 text-[11px] leading-5 text-ink/45">
-        <span className="font-bold text-ink/70">Exportación:</span> el archivo CSV incluye el detalle de reservas por fecha de llegada.
-        Para contabilidad, cruza los pagos con los comprobantes PDF de cada reserva. Este reporte no reemplaza una factura electrónica validada por la DIAN.
+          <section className="admin-card">
+            <div>
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Categorías</p>
+              <h2 className="mt-1 text-xl uppercase">Ventas por categoría</h2>
+            </div>
+            <div className="mt-4 divide-y divide-ink/[0.06]">
+              {report.categorySales.map((category) => (
+                <div key={category.name} className="flex items-center justify-between gap-3 py-2.5 first:pt-0">
+                  <span className="text-[12px] font-semibold">{category.name}</span>
+                  <span className="text-[11px] font-bold text-jungle-800">{formatCOP(category.total)}</span>
+                </div>
+              ))}
+              {report.categorySales.length === 0 && (
+                <p className="py-6 text-center text-sm text-ink/35">Sin ventas en el periodo.</p>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Galletas de avena y miel">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6e3c5"/>
+      <stop offset="1" stop-color="#e6c08c"/>
+    </linearGradient>
+    <linearGradient id="cookie" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e3a95e"/>
+      <stop offset="1" stop-color="#b9772f"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="400" cy="400" r="300" fill="#fff6e8" opacity="0.55"/>
+  <ellipse cx="400" cy="640" rx="270" ry="42" fill="#8a5a2b" opacity="0.22"/>
+  <g>
+    <g transform="translate(270 360)">
+      <circle r="130" fill="url(#cookie)"/>
+      <circle r="104" fill="#d99a4d"/>
+      <g fill="#7a4a1e">
+        <circle cx="-40" cy="-32" r="10"/>
+        <circle cx="28" cy="-50" r="8"/>
+        <circle cx="52" cy="18" r="10"/>
+        <circle cx="-14" cy="40" r="9"/>
+        <circle cx="-58" cy="26" r="7"/>
+        <circle cx="10" cy="-2" r="6"/>
+      </g>
+      <g fill="#f0c58c" opacity="0.8">
+        <ellipse cx="-60" cy="-64" rx="14" ry="6" transform="rotate(-30 -60 -64)"/>
+        <ellipse cx="60" cy="60" rx="14" ry="6" transform="rotate(35 60 60)"/>
+      </g>
+    </g>
+    <g transform="translate(530 450) rotate(14)">
+      <circle r="106" fill="url(#cookie)"/>
+      <circle r="82" fill="#d99a4d"/>
+      <g fill="#7a4a1e">
+        <circle cx="-30" cy="-24" r="9"/>
+        <circle cx="26" cy="-36" r="7"/>
+        <circle cx="38" cy="22" r="9"/>
+        <circle cx="-18" cy="38" r="8"/>
+        <circle cx="-48" cy="6" r="6"/>
+      </g>
+    </g>
+    <g transform="translate(420 250) rotate(-10)">
+      <circle r="80" fill="url(#cookie)"/>
+      <circle r="60" fill="#d99a4d"/>
+      <g fill="#7a4a1e">
+        <circle cx="-20" cy="-16" r="7"/>
+        <circle cx="22" cy="6" r="7"/>
+        <circle cx="-6" cy="28" r="6"/>
+      </g>
+    </g>
+  </g>
+  <g fill="#f5713f" opacity="0.7">
+    <path d="M120 180c30-14 60-6 78 16-34 8-60 2-78-16Z"/>
+    <path d="M680 640c-30-14-60-6-78 16 34 8 60 2 78-16Z"/>
+  </g>
+</svg>

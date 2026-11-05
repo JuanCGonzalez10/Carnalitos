@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
+import { formatDateTime } from "@/lib/utils/format";
 import type { AdminUser, Settings } from "@/types";
 
 type Message = { type: "ok" | "error"; text: string } | null;
@@ -10,26 +11,50 @@ type Message = { type: "ok" | "error"; text: string } | null;
 export default function SettingsManager({ initial, user }: { initial: Settings; user: AdminUser }) {
   const router = useRouter();
   const [business, setBusiness] = useState(initial.business);
-  const [booking, setBooking] = useState(initial.booking);
+  const [store, setStore] = useState(initial.store);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<Message>(null);
   const [password, setPassword] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordMessage, setPasswordMessage] = useState<Message>(null);
+  const [testingNotifs, setTestingNotifs] = useState(false);
+  const [notifResult, setNotifResult] = useState<{
+    whatsapp?: { success: boolean; error?: string; provider?: string };
+    email?: { success: boolean; error?: string };
+    config?: { hasWhatsAppConfig: boolean; hasEmailConfig: boolean; targetPhone: string; targetEmail: string };
+  } | null>(null);
 
-  const integrations = initial.integrations;
+  async function testNotifications() {
+    setTestingNotifs(true);
+    setNotifResult(null);
+    try {
+      const res = await fetch("/api/admin/test-notifications", { method: "POST" });
+      const data = await res.json();
+      setNotifResult(data);
+    } catch {
+      setNotifResult({
+        whatsapp: { success: false, error: "Error al invocar la prueba" },
+        email: { success: false, error: "Error al invocar la prueba" },
+      });
+    } finally {
+      setTestingNotifs(false);
+    }
+  }
 
-  async function saveSection(section: "business" | "booking") {
+  async function saveSection(section: "business" | "store") {
     setBusy(section);
     setMessage(null);
     try {
       const response = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(section === "business" ? { business } : { booking }),
+        body: JSON.stringify(section === "business" ? { business } : { store }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "No se pudo guardar la configuración.");
-      setMessage({ type: "ok", text: section === "business" ? "Información del negocio guardada." : "Configuración de reservas guardada." });
+      setMessage({
+        type: "ok",
+        text: section === "business" ? "Información del negocio guardada." : "Configuración de la tienda guardada.",
+      });
       router.refresh();
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "No se pudo guardar la configuración." });
@@ -111,12 +136,16 @@ export default function SettingsManager({ initial, user }: { initial: Settings; 
                 <input id="biz-email" type="email" value={business.email} onChange={(event) => setBusiness({ ...business, email: event.target.value })} className="admin-input" />
               </div>
               <div>
-                <label htmlFor="biz-schedule" className="admin-label">Horario</label>
+                <label htmlFor="biz-schedule" className="admin-label">Horario de atención</label>
                 <input id="biz-schedule" value={business.schedule} onChange={(event) => setBusiness({ ...business, schedule: event.target.value })} className="admin-input" />
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <label htmlFor="biz-address" className="admin-label">Dirección</label>
                 <input id="biz-address" value={business.address} onChange={(event) => setBusiness({ ...business, address: event.target.value })} className="admin-input" />
+              </div>
+              <div>
+                <label htmlFor="biz-city" className="admin-label">Ciudad</label>
+                <input id="biz-city" value={business.city} onChange={(event) => setBusiness({ ...business, city: event.target.value })} className="admin-input" />
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="biz-map" className="admin-label">Búsqueda del mapa</label>
@@ -154,62 +183,73 @@ export default function SettingsManager({ initial, user }: { initial: Settings; 
 
           <section className="admin-card">
             <div>
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Reservas</p>
-              <h2 className="mt-1 text-xl uppercase">Reglas y condiciones</h2>
-              <p className="mt-1 text-[11px] text-ink/40">Aplican a nuevas reservas y al cálculo de anticipos. Los cambios no alteran reservas ya creadas.</p>
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Tienda</p>
+              <h2 className="mt-1 text-xl uppercase">Envíos y condiciones</h2>
+              <p className="mt-1 text-[11px] text-ink/40">
+                Se aplican a los nuevos pedidos. Los cambios no alteran pedidos ya creados.
+              </p>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div>
-                <label htmlFor="book-deposit" className="admin-label">Anticipo (%)</label>
+                <label htmlFor="store-shipping" className="admin-label">Costo de envío (COP)</label>
                 <input
-                  id="book-deposit"
+                  id="store-shipping"
                   type="number"
                   min={0}
-                  max={100}
-                  value={booking.depositPercent}
-                  onChange={(event) => setBooking({ ...booking, depositPercent: Number(event.target.value) })}
+                  step={500}
+                  value={store.shippingCost}
+                  onChange={(event) => setStore({ ...store, shippingCost: Number(event.target.value) })}
                   className="admin-input"
                 />
               </div>
               <div>
-                <label htmlFor="book-min" className="admin-label">Noches mínimas</label>
+                <label htmlFor="store-free" className="admin-label">Envío gratis desde (COP)</label>
                 <input
-                  id="book-min"
+                  id="store-free"
                   type="number"
-                  min={1}
-                  max={30}
-                  value={booking.minNights}
-                  onChange={(event) => setBooking({ ...booking, minNights: Number(event.target.value) })}
+                  min={0}
+                  step={5000}
+                  value={store.freeShippingThreshold}
+                  onChange={(event) => setStore({ ...store, freeShippingThreshold: Number(event.target.value) })}
                   className="admin-input"
                 />
+                <p className="mt-1 text-[10px] text-ink/35">Usa 0 para desactivar el envío gratis por monto.</p>
               </div>
               <div>
-                <label htmlFor="book-checkin" className="admin-label">Hora de llegada</label>
-                <input id="book-checkin" value={booking.checkInTime} onChange={(event) => setBooking({ ...booking, checkInTime: event.target.value })} className="admin-input" />
-              </div>
-              <div>
-                <label htmlFor="book-checkout" className="admin-label">Hora de salida</label>
-                <input id="book-checkout" value={booking.checkOutTime} onChange={(event) => setBooking({ ...booking, checkOutTime: event.target.value })} className="admin-input" />
-              </div>
-              <div>
-                <label htmlFor="book-guests" className="admin-label">Máximo de huéspedes por reserva</label>
+                <label htmlFor="store-low" className="admin-label">Alerta de bajo stock (unidades)</label>
                 <input
-                  id="book-guests"
+                  id="store-low"
                   type="number"
-                  min={1}
-                  max={50}
-                  value={booking.maxGuests}
-                  onChange={(event) => setBooking({ ...booking, maxGuests: Number(event.target.value) })}
+                  min={0}
+                  max={9999}
+                  value={store.lowStockThreshold}
+                  onChange={(event) => setStore({ ...store, lowStockThreshold: Number(event.target.value) })}
                   className="admin-input"
                 />
+              </div>
+              <div>
+                <label htmlFor="store-currency" className="admin-label">Moneda</label>
+                <input id="store-currency" value={store.currency} onChange={(event) => setStore({ ...store, currency: event.target.value })} className="admin-input" />
+              </div>
+              <div>
+                <label htmlFor="store-pickup-address" className="admin-label">Punto de recogida</label>
+                <input id="store-pickup-address" value={store.pickupAddress} onChange={(event) => setStore({ ...store, pickupAddress: event.target.value })} className="admin-input" />
+              </div>
+              <div>
+                <label htmlFor="store-pickup-schedule" className="admin-label">Horario de recogida</label>
+                <input id="store-pickup-schedule" value={store.pickupSchedule} onChange={(event) => setStore({ ...store, pickupSchedule: event.target.value })} className="admin-input" />
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="book-terms" className="admin-label">Condiciones y política de cancelación</label>
-                <textarea id="book-terms" value={booking.terms} onChange={(event) => setBooking({ ...booking, terms: event.target.value })} rows={5} className="admin-textarea" />
+                <label htmlFor="store-delivery" className="admin-label">Nota de entregas</label>
+                <textarea id="store-delivery" value={store.deliveryNote} onChange={(event) => setStore({ ...store, deliveryNote: event.target.value })} rows={3} className="admin-textarea" />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="store-terms" className="admin-label">Condiciones de compra</label>
+                <textarea id="store-terms" value={store.terms} onChange={(event) => setStore({ ...store, terms: event.target.value })} rows={5} className="admin-textarea" />
               </div>
             </div>
-            <button onClick={() => saveSection("booking")} disabled={busy === "booking"} className="btn-jungle btn-sm mt-4">
-              <Icon name="check" className="h-3.5 w-3.5" /> {busy === "booking" ? "Guardando..." : "Guardar reglas"}
+            <button onClick={() => saveSection("store")} disabled={busy === "store"} className="btn-jungle btn-sm mt-4">
+              <Icon name="check" className="h-3.5 w-3.5" /> {busy === "store" ? "Guardando..." : "Guardar configuración"}
             </button>
           </section>
         </div>
@@ -224,55 +264,27 @@ export default function SettingsManager({ initial, user }: { initial: Settings; 
               <span className="badge mt-2 bg-jungle-50 text-jungle-700">{user.role === "admin" ? "Administrador" : "Editor"}</span>
             </div>
             <p className="mt-3 text-[10px] leading-5 text-ink/40">
-              Último ingreso: {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("es-CO") : "—"}
+              Último ingreso: {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "—"}
             </p>
           </section>
 
           <section className="admin-card">
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Integraciones</p>
-            <h2 className="mt-1 text-xl uppercase">Estado de conexiones</h2>
-            <div className="mt-4 space-y-3">
-              {[
-                {
-                  label: "Pagos en línea",
-                  provider: integrations.payments.provider,
-                  enabled: integrations.payments.enabled,
-                  detail: integrations.payments.enabled
-                    ? "Credenciales detectadas. El cobro en línea requiere completar el flujo del proveedor."
-                    : "Sin configurar. Las reservas se pagan por transferencia o en el sitio.",
-                },
-                {
-                  label: "Facturación electrónica",
-                  provider: integrations.electronicInvoice.provider,
-                  enabled: integrations.electronicInvoice.enabled,
-                  detail: integrations.electronicInvoice.enabled
-                    ? "Credenciales detectadas. Falta implementar el mapeo del proveedor."
-                    : "Sin configurar. La app no emite facturas DIAN.",
-                },
-                {
-                  label: "Correos automáticos",
-                  provider: integrations.email.provider,
-                  enabled: integrations.email.enabled,
-                  detail: integrations.email.enabled
-                    ? "Servidor SMTP detectado."
-                    : "Sin configurar. Las confirmaciones se hacen manualmente.",
-                },
-              ].map((item) => (
-                <div key={item.label} className="rounded-lg border border-ink/[0.08] p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-bold">{item.label}</p>
-                    <span className={`badge ${item.enabled ? "bg-lime-100 text-lime-800" : "bg-ink/5 text-ink/45"}`}>
-                      {item.enabled ? "Detectada" : "Pendiente"}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[10px] leading-5 text-ink/45">{item.detail}</p>
-                  <p className="mt-1 font-mono text-[9px] uppercase tracking-wider text-ink/30">{item.provider}</p>
-                </div>
-              ))}
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Pagos</p>
+            <h2 className="mt-1 text-xl uppercase">Cobro de pedidos</h2>
+            <div className="mt-3 space-y-2 text-[11px] leading-5 text-ink/50">
+              <p className="flex items-start gap-2">
+                <Icon name="money" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-jungle-600" />
+                Los pedidos se registran sin cobro automático.
+              </p>
+              <p className="flex items-start gap-2">
+                <Icon name="card" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-jungle-600" />
+                Acepta efectivo contraentrega, Nequi, Bancolombia o transferencia.
+              </p>
+              <p className="flex items-start gap-2">
+                <Icon name="check" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-jungle-600" />
+                Marca cada pedido como pagado desde el detalle del pedido.
+              </p>
             </div>
-            <p className="mt-3 text-[10px] leading-5 text-ink/40">
-              Las credenciales se configuran en <code className="rounded bg-cream-100 px-1 py-0.5 text-[9px]">.env.local</code>. Consulta la documentación de integraciones del proyecto.
-            </p>
           </section>
 
           <section className="admin-card">
@@ -329,6 +341,62 @@ export default function SettingsManager({ initial, user }: { initial: Settings; 
                 <Icon name="shield" className="h-3.5 w-3.5" /> {busy === "password" ? "Actualizando..." : "Actualizar contraseña"}
               </button>
             </form>
+          </section>
+          <section className="admin-card">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-ink/35">Alertas de pedidos</p>
+            <h2 className="mt-1 text-xl uppercase">Notificaciones automáticas</h2>
+            <p className="mt-1 text-[11px] text-ink/40">
+              El servidor envía alertas inmediatas por WhatsApp y correo cuando un cliente finaliza una compra.
+            </p>
+
+            <div className="mt-3 space-y-2 text-[12px]">
+              <div className="flex items-center justify-between rounded-lg bg-cream-50 p-2.5">
+                <span className="font-semibold text-ink/75">WhatsApp al dueño</span>
+                <span className="font-mono text-[11px] text-jungle-800">{business.whatsapp || "+57 310 833 8636"}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-cream-50 p-2.5">
+                <span className="font-semibold text-ink/75">Correo al dueño</span>
+                <span className="font-mono text-[11px] text-jungle-800">{business.email || "carnalitosbarf@gmail.com"}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={testNotifications}
+              disabled={testingNotifs}
+              className="btn-lime btn-sm mt-3 w-full"
+            >
+              <Icon name="whatsapp" className="h-3.5 w-3.5" />
+              {testingNotifs ? "Enviando prueba..." : "Probar notificaciones ahora"}
+            </button>
+
+            {notifResult && (
+              <div className="mt-3 space-y-2 rounded-xl border border-ink/10 bg-white p-3 text-[11px]">
+                <p className="font-bold text-ink">Resultado de la prueba:</p>
+                <div>
+                  <span className="font-semibold">WhatsApp: </span>
+                  {notifResult.whatsapp?.success ? (
+                    <span className="text-emerald-700 font-semibold">✓ Enviado con éxito vía {notifResult.whatsapp.provider}</span>
+                  ) : (
+                    <span className="text-red-600 font-semibold">✗ No enviado ({notifResult.whatsapp?.error || "Falta CALLMEBOT_API_KEY en .env.local"})</span>
+                  )}
+                </div>
+                <div>
+                  <span className="font-semibold">Correo: </span>
+                  {notifResult.email?.success ? (
+                    <span className="text-emerald-700 font-semibold">✓ Enviado con éxito a {business.email}</span>
+                  ) : (
+                    <span className="text-red-600 font-semibold">✗ No enviado ({notifResult.email?.error || "Falta EMAIL_PASS en .env.local"})</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-3 rounded-lg border border-dashed border-ink/15 p-2.5 text-[10px] leading-4 text-ink/50 space-y-1">
+              <p className="font-bold text-ink/70">¿Cómo activarlas en 1 minuto?</p>
+              <p>• <strong>WhatsApp:</strong> Envía <code className="bg-ink/5 px-1 rounded text-ink">I allow callmebot to send me messages</code> a <span className="font-mono text-jungle-700">+34 623 78 64 49</span> (o al alternativo <span className="font-mono text-jungle-700">+34 644 95 42 75</span>) y pon la clave en <code className="bg-ink/5 px-1 rounded text-ink">CALLMEBOT_API_KEY</code> de <code className="bg-ink/5 px-1 rounded text-ink">.env.local</code>.</p>
+              <p>• <strong>Gmail:</strong> Genera una Contraseña de Aplicación en <span className="font-mono text-jungle-700">myaccount.google.com/apppasswords</span> y colócala en <code className="bg-ink/5 px-1 rounded text-ink">EMAIL_PASS</code> de <code className="bg-ink/5 px-1 rounded text-ink">.env.local</code>.</p>
+            </div>
           </section>
         </aside>
       </div>

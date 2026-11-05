@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Croquetas de salmón para gatos">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f3a3d"/>
+      <stop offset="1" stop-color="#1c6b6a"/>
+    </linearGradient>
+    <linearGradient id="fish" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9d7d"/>
+      <stop offset="1" stop-color="#e4614a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="650" cy="170" r="150" fill="#ffb27a" opacity="0.25"/>
+  <g fill="#ffffff" opacity="0.06">
+    <circle cx="150" cy="180" r="60"/>
+    <circle cx="110" cy="250" r="24"/>
+    <circle cx="680" cy="600" r="48"/>
+  </g>
+  <ellipse cx="400" cy="620" rx="250" ry="40" fill="#000" opacity="0.3"/>
+  <ellipse cx="400" cy="530" rx="240" ry="100" fill="#f7ead9"/>
+  <g transform="translate(400 500)">
+    <g transform="rotate(-8)">
+      <ellipse cx="0" cy="0" rx="170" ry="92" fill="url(#fish)"/>
+      <path d="M148 0 L260 -78 L260 78 Z" fill="#e4614a"/>
+      <path d="M-40 -84 L10 -20 L-90 -20 Z" fill="#f47b60"/>
+      <path d="M-40 84 L10 20 L-90 20 Z" fill="#f47b60"/>
+      <circle cx="-104" cy="-22" r="12" fill="#0f3a3d"/>
+      <circle cx="-100" cy="-25" r="4" fill="#fff"/>
+      <path d="M-30 18c30 22 64 24 96 6" stroke="#c94834" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+  <g fill="#f5c26b">
+    <circle cx="190" cy="600" r="16"/>
+    <circle cx="220" cy="630" r="10"/>
+    <circle cx="610" cy="620" r="14"/>
+    <circle cx="580" cy="648" r="8"/>
+  </g>
+  <g fill="none" stroke="#9fe0d7" stroke-width="4" opacity="0.5">
+    <path d="M90 420c40 30 40 80 0 110"/>
+    <path d="M710 420c-40 30-40 80 0 110"/>
+  </g>
+</svg>

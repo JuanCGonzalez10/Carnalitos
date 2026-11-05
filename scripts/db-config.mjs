@@ -48,23 +48,14 @@ export async function resetDatabase() {
   const client = new Client({ connectionString: databaseUrl(), ssl: sslConfig() });
   await client.connect();
   await client.query(`
-    drop table if exists booking_status_history cascade;
-    drop table if exists payments cascade;
-    drop table if exists booking_services cascade;
-    drop table if exists booking_activities cascade;
-    drop table if exists bookings cascade;
-    drop table if exists customers cascade;
-    drop table if exists gallery_images cascade;
-    drop table if exists blocked_dates cascade;
-    drop table if exists glamping_rates cascade;
-    drop table if exists glamping_images cascade;
-    drop table if exists glampings cascade;
-    drop table if exists services cascade;
-    drop table if exists activities cascade;
+    drop table if exists order_items cascade;
+    drop table if exists orders cascade;
+    drop table if exists products cascade;
+    drop table if exists categories cascade;
     drop table if exists admin_sessions cascade;
     drop table if exists admin_users cascade;
-    drop table if exists settings cascade;
     drop table if exists contact_messages cascade;
+    drop table if exists settings cascade;
   `);
   await client.end();
   console.log("✓ Tablas eliminadas (modo --reset)");

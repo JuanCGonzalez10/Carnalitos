@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/Icon";
 
-const SUBJECTS = ["Reserva de glamping", "Actividades", "Evento o grupo", "Información general", "Otro"];
+const SUBJECTS = ["Pedido o producto", "Envíos y entregas", "Alimentación de mi mascota", "Venta al por mayor", "Otro"];
 
 export default function ContactForm() {
   const [form, setForm] = useState({
@@ -116,7 +116,7 @@ export default function ContactForm() {
           value={form.message}
           onChange={(event) => setForm({ ...form, message: event.target.value })}
           className="field resize-y"
-          placeholder="Cuéntanos qué tienes en mente: fechas, número de personas, tipo de experiencia..."
+          placeholder="Cuéntanos qué necesitas: un pedido, una duda sobre ingredientes o una entrega..."
         />
       </div>
 

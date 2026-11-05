@@ -1,202 +1,88 @@
-export type BookingStatus =
+export type OrderStatus =
   | "pending"
   | "confirmed"
-  | "checked_in"
-  | "completed"
-  | "cancelled"
-  | "no_show";
+  | "preparing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 
-export type PaymentStatus = "unpaid" | "deposit_paid" | "paid" | "refunded";
+export type PaymentStatus = "unpaid" | "paid" | "refunded";
 
 export type PaymentMethod = "cash" | "nequi" | "bancolombia" | "card" | "transfer" | "other";
 
-export interface GlampingImage {
-  id: string;
-  glampingId: string;
-  url: string;
-  alt: string;
-  sortOrder: number;
-  isMain: boolean;
-}
+export type DeliveryMethod = "delivery" | "pickup";
 
-export interface GlampingRate {
-  id: string;
-  glampingId: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  pricePerNight: number;
-  minNights: number;
-  active: boolean;
-}
+export type PetType = "perro" | "gato" | "ambos";
 
-export interface BlockedDate {
-  id: string;
-  glampingId: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-}
-
-export interface Glamping {
+export interface Category {
   id: string;
   slug: string;
   name: string;
-  tagline: string;
+  description: string;
+  icon: string;
+  image: string;
+  sortOrder: number;
+  active: boolean;
+  productCount?: number;
+}
+
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  categoryId: string | null;
+  categoryName?: string | null;
+  categorySlug?: string | null;
   shortDescription: string;
   description: string;
-  pricePerNight: number;
-  weekendPricePerNight: number | null;
-  holidayPricePerNight: number | null;
-  capacity: number;
-  bedrooms: number;
-  bathrooms: number;
-  sizeM2: number | null;
-  amenities: string[];
-  includes: string[];
-  conditions: string;
-  location: string;
-  mainImage: string;
+  price: number;
+  compareAtPrice: number | null;
+  stock: number;
+  sku: string;
+  unit: string;
+  weight: string;
+  petType: PetType;
+  benefits: string[];
+  ingredients: string;
+  image: string;
   active: boolean;
   featured: boolean;
   sortOrder: number;
   createdAt?: string;
-  images?: GlampingImage[];
-  rates?: GlampingRate[];
-  blocks?: BlockedDate[];
 }
 
-export interface Activity {
+export interface OrderItem {
   id: string;
-  slug: string;
-  name: string;
-  category: string;
-  shortDescription: string;
-  description: string;
-  price: number;
-  weekendPrice: number | null;
-  holidayPrice: number | null;
-  priceUnit: string;
-  duration: string;
-  difficulty: string;
-  minAge: number;
-  maxPeople: number | null;
-  includes: string[];
-  requirements: string;
-  image: string;
-  active: boolean;
-  featured: boolean;
-  sortOrder: number;
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  priceUnit: string;
-  image: string;
-  active: boolean;
-  sortOrder: number;
-}
-
-export interface GalleryImage {
-  id: string;
-  url: string;
-  alt: string;
-  category: string;
-  sortOrder: number;
-  active: boolean;
-}
-
-export interface Customer {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  document: string;
-  city: string;
-  notes: string;
-  createdAt: string;
-  bookingsCount?: number;
-  totalSpent?: number;
-  lastBookingAt?: string | null;
-}
-
-export interface BookingActivity {
-  id: string;
-  activityId: string | null;
-  activityName: string;
-  quantity: number;
+  orderId: string;
+  productId: string | null;
+  productName: string;
   unitPrice: number;
-  total: number;
-}
-
-export interface BookingService {
-  id: string;
-  serviceId: string | null;
-  serviceName: string;
   quantity: number;
-  unitPrice: number;
   total: number;
+  image: string;
 }
 
-export interface Payment {
-  id: string;
-  bookingId: string;
-  amount: number;
-  method: PaymentMethod;
-  reference: string;
-  status: "pending" | "approved" | "rejected" | "refunded";
-  paidAt: string;
-  notes: string;
-  createdBy: string;
-  createdAt: string;
-}
-
-export interface Booking {
+export interface Order {
   id: string;
   code: string;
-  customerId: string | null;
-  glampingId: string;
-  glampingName?: string;
-  glampingSlug?: string;
-  glampingImage?: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  guestDocument: string;
-  guestCity: string;
-  checkIn: string;
-  checkOut: string;
-  guests: number;
-  nights: number;
-  nightlyRate: number;
-  subtotal: number;
-  activitiesTotal: number;
-  servicesTotal: number;
-  total: number;
-  depositRequired: number;
-  paidAmount: number;
-  balance: number;
-  status: BookingStatus;
-  paymentStatus: PaymentStatus;
-  source: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  deliveryMethod: DeliveryMethod;
+  address: string;
+  city: string;
   notes: string;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   adminNotes: string;
   createdAt: string;
   updatedAt: string;
-  activities?: BookingActivity[];
-  services?: BookingService[];
-  payments?: Payment[];
-  history?: Array<{
-    id: string;
-    fromStatus: string | null;
-    toStatus: string;
-    note: string;
-    createdBy: string;
-    createdAt: string;
-  }>;
+  itemsCount?: number;
+  items?: OrderItem[];
 }
 
 export interface BusinessSettings {
@@ -207,6 +93,7 @@ export interface BusinessSettings {
   whatsapp: string;
   email: string;
   address: string;
+  city: string;
   mapQuery: string;
   instagram: string;
   facebook: string;
@@ -215,26 +102,20 @@ export interface BusinessSettings {
   provisional: boolean;
 }
 
-export interface BookingSettings {
+export interface StoreSettings {
   currency: string;
-  depositPercent: number;
-  minNights: number;
-  checkInTime: string;
-  checkOutTime: string;
-  maxGuests: number;
+  shippingCost: number;
+  freeShippingThreshold: number;
+  pickupAddress: string;
+  pickupSchedule: string;
+  deliveryNote: string;
   terms: string;
-}
-
-export interface IntegrationSettings {
-  payments: { provider: string; enabled: boolean; publicKeyConfigured: boolean };
-  electronicInvoice: { provider: string; enabled: boolean; dianValidated: boolean };
-  email: { provider: string; enabled: boolean };
+  lowStockThreshold: number;
 }
 
 export interface Settings {
   business: BusinessSettings;
-  booking: BookingSettings;
-  integrations: IntegrationSettings;
+  store: StoreSettings;
 }
 
 export interface AdminUser {
@@ -246,63 +127,38 @@ export interface AdminUser {
   lastLoginAt: string | null;
 }
 
-export interface Quote {
-  nights: number;
-  nightlyRate: number;
-  subtotal: number;
-  activitiesTotal: number;
-  servicesTotal: number;
-  total: number;
-  depositRequired: number;
-  balance: number;
-  minNights: number;
-  rateName: string;
-  nightlyBreakdown: Array<{
-    date: string;
-    price: number;
-    label: string;
-    kind: "seasonal" | "holiday" | "weekend" | "base";
-  }>;
-  activityLines: Array<{
-    activityId: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-    priceLabel: string;
-    priceKind: "holiday" | "weekend" | "base";
-  }>;
-  serviceLines: Array<{ serviceId: string; name: string; quantity: number; unitPrice: number; total: number }>;
-}
-
-export interface QuoteActivityInput {
-  activityId: string;
-  quantity: number;
-}
-
-export interface QuoteServiceInput {
-  serviceId: string;
-  quantity: number;
-}
-
-export interface AvailabilityItem {
-  glamping: Glamping;
-  available: boolean;
-  quote: Quote | null;
-  reason?: string;
-}
-
 export interface DashboardStats {
   revenue: number;
   pendingBalance: number;
-  bookingsThisMonth: number;
-  activeBookings: number;
-  occupancy: number;
-  activeGlampings: number;
+  ordersThisMonth: number;
+  pendingOrders: number;
+  activeProducts: number;
+  lowStock: number;
   customers: number;
-  pendingBookings: number;
+  averageTicket: number;
   monthlyRevenue: Array<{ month: string; total: number }>;
   statusCounts: Record<string, number>;
-  recentBookings: Booking[];
-  upcomingBookings: Booking[];
+  topProducts: Array<{ name: string; quantity: number; total: number }>;
+  categorySales: Array<{ name: string; total: number }>;
+  recentOrders: Order[];
+  lowStockProducts: Product[];
+}
+
+export interface CartItem {
+  productId: string;
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+  unit: string;
+  stock: number;
+  quantity: number;
+}
+
+export interface CartTotals {
+  subtotal: number;
+  shipping: number;
+  total: number;
+  freeShippingRemaining: number;
+  itemCount: number;
 }

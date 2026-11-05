@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --lime: #b7e400;
-    --jungle: #0b5d3b;
-    --ink: #0a0a0a;
-    --cream: #f5f2e9;
+    --lime: #ffcc29;
+    --jungle: #178254;
+    --ink: #3e2f2b;
+    --cream: #fff9ec;
     color-scheme: light;
   }
 
@@ -26,14 +26,14 @@
   h2,
   h3,
   h4 {
-    @apply font-display font-normal;
-    letter-spacing: -0.01em;
-    line-height: 0.95;
+    @apply font-display font-bold;
+    letter-spacing: -0.005em;
+    line-height: 1;
   }
 
   ::selection {
     background: var(--lime);
-    color: #0a0a0a;
+    color: var(--ink);
   }
 
   :focus-visible {
@@ -51,15 +51,15 @@
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: #efebdd;
+    background: #f5ead6;
   }
   ::-webkit-scrollbar-thumb {
-    background: #c9c3b1;
-    border: 2px solid #efebdd;
+    background: #cdb9a2;
+    border: 2px solid #f5ead6;
     border-radius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #8e8a7c;
+    background: #a98d74;
   }
 }
 
@@ -76,6 +76,36 @@
     @apply text-[11px] font-extrabold uppercase tracking-luxe text-lime-400;
   }
 
+  .brand-wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: 0.015em;
+    line-height: 1;
+    color: #ffcc29;
+    text-shadow:
+      1.5px 0 0 #3e2f2b,
+      -1.5px 0 0 #3e2f2b,
+      0 1.5px 0 #3e2f2b,
+      0 -1.5px 0 #3e2f2b,
+      1.2px 1.2px 0 #3e2f2b,
+      -1.2px 1.2px 0 #3e2f2b,
+      1.2px -1.2px 0 #3e2f2b,
+      -1.2px -1.2px 0 #3e2f2b;
+  }
+
+  .brand-wordmark-light {
+    color: #ffcc29;
+    text-shadow:
+      1.5px 0 0 #fff,
+      -1.5px 0 0 #fff,
+      0 1.5px 0 #fff,
+      0 -1.5px 0 #fff,
+      1.2px 1.2px 0 #fff,
+      -1.2px 1.2px 0 #fff,
+      1.2px -1.2px 0 #fff,
+      -1.2px -1.2px 0 #fff;
+  }
+
   .section-title {
     @apply text-4xl uppercase sm:text-5xl md:text-6xl;
   }
@@ -89,16 +119,16 @@
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-[12px] font-extrabold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-lime {
-    @apply btn bg-lime-400 text-ink shadow-[0_8px_30px_rgba(183,228,0,0.22)] hover:bg-lime-300 hover:shadow-[0_12px_36px_rgba(183,228,0,0.35)];
+    @apply btn bg-lime-400 text-ink shadow-[0_10px_30px_rgba(255,204,41,0.38)] hover:bg-lime-300 hover:shadow-[0_14px_38px_rgba(255,204,41,0.55)];
   }
   .btn-dark {
     @apply btn bg-ink text-white hover:bg-jungle-700;
   }
   .btn-jungle {
-    @apply btn bg-jungle-600 text-white hover:bg-jungle-700;
+    @apply btn bg-jungle-500 text-white hover:bg-jungle-600;
   }
   .btn-outline {
-    @apply btn border border-ink/20 bg-transparent text-ink hover:border-jungle-600 hover:text-jungle-600;
+    @apply btn border border-ink/20 bg-transparent text-ink hover:border-jungle-600 hover:text-jungle-700;
   }
   .btn-outline-light {
     @apply btn border border-white/30 bg-transparent text-white hover:border-lime-400 hover:text-lime-400;
@@ -136,8 +166,20 @@
     @apply inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-jungle-700 transition hover:text-jungle-500;
   }
 
-  .prose-aeh {
+  .prose-store {
     @apply space-y-5 text-[15px] leading-7 text-ink/70;
+  }
+
+  .product-card {
+    @apply relative flex flex-col overflow-hidden rounded-3xl border border-ink/[0.07] bg-white transition duration-300 hover:-translate-y-1 hover:border-lime-300 hover:shadow-[0_24px_60px_rgba(20,57,43,0.10)];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white px-3.5 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink/55 transition hover:border-jungle-600 hover:text-jungle-700;
+  }
+
+  .chip-active {
+    @apply border-jungle-700 bg-jungle-700 text-white hover:border-jungle-700 hover:text-white;
   }
 
   .hero-noise {
@@ -179,28 +221,30 @@
   }
 
   .status-pending {
-    @apply badge bg-sun-100 text-yellow-800;
-  }
-  .status-confirmed {
     @apply badge bg-lime-100 text-lime-800;
   }
-  .status-checked_in {
+  .status-confirmed {
     @apply badge bg-blue-50 text-blue-700;
   }
-  .status-completed {
-    @apply badge bg-jungle-50 text-jungle-700;
+  .status-preparing {
+    @apply badge bg-amber-100 text-amber-800;
   }
-  .status-cancelled,
-  .status-no_show {
+  .status-shipped {
+    @apply badge bg-jungle-100 text-jungle-800;
+  }
+  .status-delivered {
+    @apply badge bg-jungle-500 text-white;
+  }
+  .status-cancelled {
     @apply badge bg-red-50 text-red-700;
   }
   .status-unpaid {
     @apply badge bg-ink/5 text-ink/60;
   }
-  .status-deposit_paid {
-    @apply badge bg-sun-100 text-yellow-800;
-  }
   .status-paid {
+    @apply badge bg-jungle-100 text-jungle-800;
+  }
+  .status-refunded {
     @apply badge bg-lime-100 text-lime-800;
   }
 }

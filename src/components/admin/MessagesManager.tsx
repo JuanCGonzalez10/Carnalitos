@@ -110,7 +110,7 @@ export default function MessagesManager({ initial }: { initial: ContactMessage[]
       <div className="space-y-3">
         {filtered.map((message) => {
           const whatsapp = `https://wa.me/${message.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-            `Hola ${message.name}, gracias por escribir a Adrenalina Extrema Huila.`,
+            `Hola ${message.name}, gracias por escribir a Carnalitos.`,
           )}`;
           return (
             <article

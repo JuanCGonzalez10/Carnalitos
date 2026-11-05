@@ -9,300 +9,349 @@ export function hashPassword(password) {
   return `scrypt$${salt}$${hash}`;
 }
 
-const glampings = [
+const categories = [
   {
-    slug: "domo-mirador-del-canon",
-    name: "Domo Mirador del Cañón",
-    tagline: "Amanecer frente a la inmensidad",
-    short_description:
-      "Un domo geodésico con ventanal panorámico para dormir mirando las luces del cañón.",
-    description:
-      "Despierta con el cañón iluminándose lentamente. El Domo Mirador combina la sensación de acampar con el confort de una habitación boutique: cama king, textiles cálidos, terraza privada y una ventana enorme que convierte el paisaje en parte de la habitación.\n\nAl caer la noche, la fogata y el cielo abierto completan una experiencia pensada para desconectar. Es ideal para parejas que buscan aventura sin renunciar al descanso.",
-    price: 420000,
-    capacity: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 28,
-    amenities: ["Cama king", "Baño privado", "Terraza panorámica", "Fogata exterior", "Wi-Fi", "Cafetera", "Amenities de baño", "Ropa de cama premium"],
-    includes: ["Desayuno campestre", "Caminata guiada al mirador", "Parqueadero privado"],
-    conditions: "Tarifa para 2 personas. No se permiten mascotas en este alojamiento. Check-in 3:00 p. m. / check-out 12:00 m.",
-    image: "/images/glamping-domos.jpg",
-    featured: true,
+    slug: "snacks-naturales",
+    name: "Snacks naturales",
+    description: "Premios horneados y deshidratados con proteína real, ideales para el día a día.",
+    icon: "bone",
     sort: 1,
-    gallery: [
-      ["/images/glamping-domos.jpg", "Domo geodésico entre montañas"],
-      ["/images/glamping-interior.jpg", "Interior del domo con cama king"],
-      ["/images/gal-noche.jpg", "Cielo nocturno visto desde el domo"],
-    ],
   },
   {
-    slug: "cabana-rio-magdalena",
-    name: "Cabaña Río Magdalena",
-    tagline: "El sonido del agua como banda sonora",
-    short_description:
-      "Cabaña de madera con terraza, hamacas y acceso a una zona privada del río.",
-    description:
-      "Una cabaña amplia y fresca, construida con maderas locales y abierta al sonido del río. Tiene dos habitaciones, cocina equipada, terraza con hamacas y un sendero corto que lleva a la zona de río.\n\nEs el alojamiento perfecto para familias y grupos pequeños que quieren combinar descanso, naturaleza y actividades de aventura. La luz de la mañana entra por los ventanales y la tarde se disfruta alrededor de la fogata.",
-    price: 560000,
-    capacity: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 52,
-    amenities: ["Dos habitaciones", "Cocina equipada", "Terraza con hamacas", "Baño privado", "Wi-Fi", "Nevera", "Zona de fogata", "Acceso a zona de río"],
-    includes: ["Desayuno campestre para 4", "Kit de fogata", "Parqueadero privado"],
-    conditions: "Tarifa para 4 personas. Máximo 2 personas adicionales con costo de $60.000 por persona/noche. Mascotas permitidas con aviso previo.",
-    image: "/images/glamping-rio.jpg",
-    featured: true,
+    slug: "comida-saludable",
+    name: "Comida saludable",
+    description: "Recetas completas y balanceadas para perros y gatos, con ingredientes visibles.",
+    icon: "utensils",
     sort: 2,
-    gallery: [
-      ["/images/glamping-rio.jpg", "Cabaña junto al río"],
-      ["/images/glamping-fogata.jpg", "Zona de fogata al atardecer"],
-      ["/images/glamping-interior2.jpg", "Habitación principal de la cabaña"],
-    ],
   },
   {
-    slug: "safari-bosque-nublado",
-    name: "Safari Bosque Nublado",
-    tagline: "Dormir dentro del bosque",
-    short_description:
-      "Carpa safari elevada con ducha exterior, caldero y vistas al bosque nublado.",
-    description:
-      "Una carpa safari elevada, rodeada de árboles y niebla. El Safari Bosque Nublado tiene cama king, sala pequeña, terraza con caldero exterior y una ducha al aire libre para vivir el bosque con todos los sentidos.\n\nPensado para parejas y viajeros que buscan una experiencia íntima, silenciosa y profundamente natural. Al amanecer, el canto de las aves y la neblina entre los árboles marcan el ritmo del día.",
-    price: 680000,
-    capacity: 4,
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 45,
-    amenities: ["Cama king + sofá cama", "Ducha exterior", "Terraza privada", "Caldero exterior", "Mirador", "Wi-Fi", "Desayuno incluido", "Iluminación cálida"],
-    includes: ["Desayuno campestre", "Avistamiento de aves guiado", "Kit de fogata", "Parqueadero privado"],
-    conditions: "Tarifa para 2 personas; el sofá cama permite hasta 4. Menores de 8 años no pueden participar en las actividades de altura.",
-    image: "/images/glamping-bosque.jpg",
-    featured: true,
+    slug: "premios-entrenamiento",
+    name: "Premios de entrenamiento",
+    description: "Porciones pequeñas y aromáticas para reforzar buenos comportamientos.",
+    icon: "star",
     sort: 3,
-    gallery: [
-      ["/images/glamping-bosque.jpg", "Carpa safari en el bosque"],
-      ["/images/glamping-lujo.jpg", "Terraza con vista al bosque"],
-      ["/images/gal-atardecer.jpg", "Atardecer desde el mirador"],
-    ],
   },
   {
-    slug: "suite-del-canon",
-    name: "Suite del Cañón",
-    tagline: "Glamping de autor con jacuzzi privado",
-    short_description:
-      "La opción más exclusiva: jacuzzi privado, terraza y vista abierta al cañón.",
-    description:
-      "Para quienes quieren celebrar algo especial. La Suite del Cañón ofrece jacuzzi privado, cama king, minibar, terraza con mobiliario de descanso y una vista abierta al cañón que cambia con la luz del día.\n\nEl servicio incluye desayuno servido en la terraza y una atención personalizada para organizar detalles, celebraciones o una escapada sin preocupaciones.",
-    price: 890000,
-    capacity: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 60,
-    amenities: ["Jacuzzi privado", "Cama king", "Terraza", "Vista al cañón", "Minibar", "Wi-Fi", "Servicio a la habitación", "Desayuno en la terraza"],
-    includes: ["Desayuno servido en la terraza", "Botella de vino de bienvenida", "Decoración básica de celebración", "Parqueadero privado"],
-    conditions: "Tarifa para 2 personas. Celebración o decoración especial sujeta a disponibilidad y costo adicional. Prohibido fumar en la suite.",
-    image: "/images/glamping-lujo.jpg",
-    featured: true,
+    slug: "para-gatos",
+    name: "Para gatos",
+    description: "Snacks y comida pensada para el paladar felino y su digestión.",
+    icon: "heart",
     sort: 4,
-    gallery: [
-      ["/images/glamping-lujo.jpg", "Suite con terraza y vista al cañón"],
-      ["/images/glamping-interior2.jpg", "Detalle de la habitación"],
-      ["/images/gal-piscina.jpg", "Zona de descanso y jacuzzi"],
-    ],
   },
   {
-    slug: "refugio-fogata",
-    name: "Refugio Fogata",
-    tagline: "Lo esencial, bien hecho",
-    short_description:
-      "Un refugio cálido y sencillo para viajeros que buscan naturaleza y buena compañía.",
-    description:
-      "Un espacio compacto, cálido y funcional para quienes prefieren pasar más tiempo afuera. Cama doble, baño privado, hamaca y una zona de fogata compartida con vista a las montañas.\n\nEs la puerta de entrada a las actividades de aventura y una excelente opción para viajeros solos o parejas que quieren una escapada sin complicaciones.",
-    price: 380000,
-    capacity: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 24,
-    amenities: ["Cama doble", "Baño privado", "Zona de fogata", "Hamaca", "Wi-Fi", "Desayuno incluido", "Ventilación natural"],
-    includes: ["Desayuno campestre", "Kit de fogata", "Parqueadero privado"],
-    conditions: "Tarifa para 2 personas. Alojamiento sin aire acondicionado; la temperatura del cañón es fresca en la noche.",
-    image: "/images/glamping-fogata.jpg",
-    featured: false,
+    slug: "masticables",
+    name: "Masticables",
+    description: "Opciones duraderas que ayudan a la limpieza dental y al entretenimiento.",
+    icon: "paw",
     sort: 5,
-    gallery: [
-      ["/images/glamping-fogata.jpg", "Refugio con zona de fogata"],
-      ["/images/glamping-interior.jpg", "Interior cálido del refugio"],
-      ["/images/hero-grupo.jpg", "Aventura en el cañón"],
-    ],
   },
 ];
 
-const activities = [
+const products = [
   {
-    slug: "rafting-rio-magdalena",
-    name: "Rafting Río Magdalena",
-    category: "Agua",
-    short: "Desciende los rápidos del Magdalena con guías certificados y todo el equipo de seguridad.",
+    slug: "hueso-de-pollo-desecado",
+    name: "Hueso de pollo desecado",
+    category: "snacks-naturales",
+    short: "Pechuga de pollo deshidratada en forma de hueso, crujiente y sin aditivos.",
     description:
-      "Una experiencia de adrenalina pura en el río Magdalena. Después de una charla de seguridad y una práctica corta, salimos al agua para descender los rápidos acompañados por guías especializados. La actividad incluye casco, chaleco, remo y traje de neopreno cuando el clima lo requiere.\n\nNo necesitas experiencia previa. El nivel del río y el tramo se ajustan a las condiciones del día para priorizar la seguridad del grupo.",
-    price: 180000,
-    unit: "persona",
-    duration: "2.5 horas",
-    difficulty: "Alta",
-    age: 12,
-    max: 10,
-    includes: ["Guía certificado", "Equipo de seguridad", "Charla técnica", "Hidratación", "Fotografía grupal"],
-    requirements: "Saber nadar, no tener lesiones recientes y firmar consentimiento informado.",
-    image: "/images/act-rafting.jpg",
+      "Un premio sencillo y honesto: pechuga de pollo seleccionada, deshidratada lentamente para conservar su aroma y su textura crujiente. No lleva conservantes, colorantes ni saborizantes.\n\nEs perfecto como premio diario o para mantener a tu perro entretenido. Por su textura firme, también funciona muy bien para perros que mastican con entusiasmo.",
+    price: 18900,
+    compare: 22000,
+    stock: 40,
+    sku: "CAR-SN-001",
+    unit: "paquete",
+    weight: "120 g",
+    pet: "perro",
+    benefits: ["Alta en proteína", "Sin conservantes", "Textura crujiente", "Hecho en lotes pequeños"],
+    ingredients: "Pechuga de pollo 100%.",
+    image: "/images/productos/hueso-pollo.svg",
     featured: true,
     sort: 1,
   },
   {
-    slug: "escalada-en-roca",
-    name: "Escalada en Roca",
-    category: "Altura",
-    short: "Aprende las bases de la escalada en una pared natural con supervisión profesional.",
+    slug: "chips-de-higado-de-res",
+    name: "Chips de hígado de res",
+    category: "snacks-naturales",
+    short: "Láminas finas de hígado deshidratado, intensas en sabor y hierro.",
     description:
-      "Una introducción real a la escalada en roca. El equipo revisa el equipo, explica los nudos y las técnicas básicas, y acompaña cada ascenso desde la base. La pared se elige según el nivel del grupo.\n\nLa actividad está diseñada para principiantes y para quienes ya escalan y quieren conocer nuevas rutas. Todo el equipo técnico está incluido.",
-    price: 150000,
-    unit: "persona",
-    duration: "3 horas",
-    difficulty: "Alta",
-    age: 10,
-    max: 8,
-    includes: ["Guía de escalada", "Arnés, casco y cuerda", "Charla técnica", "Hidratación"],
-    requirements: "Ropa cómoda, calzado deportivo y buena condición física básica.",
-    image: "/images/act-escalada.jpg",
+      "El hígado es uno de los ingredientes más aromáticos para los perros y una buena fuente natural de hierro y vitamina A. Lo cortamos en láminas finas y lo deshidratamos hasta lograr un snack ligero y quebradizo.\n\nÚsalo como premio de alto valor en entrenamientos o para romper la rutina. Por su intensidad, recomendamos darlo en porciones pequeñas.",
+    price: 16500,
+    compare: null,
+    stock: 32,
+    sku: "CAR-SN-002",
+    unit: "paquete",
+    weight: "80 g",
+    pet: "perro",
+    benefits: ["Rico en hierro", "Muy aromático", "Ideal para entrenar", "Sin cereales"],
+    ingredients: "Hígado de res 100%.",
+    image: "/images/productos/chips-higado.svg",
     featured: true,
     sort: 2,
   },
   {
-    slug: "cascada-escondida",
-    name: "Cascada Escondida",
-    category: "Naturaleza",
-    short: "Caminata entre bosque y quebradas hasta una cascada de agua fría y cristalina.",
+    slug: "galletas-de-avena-y-miel",
+    name: "Galletas de avena y miel",
+    category: "premios-entrenamiento",
+    short: "Galletas horneadas con avena integral y un toque de miel, tamaño bocado.",
     description:
-      "Una caminata guiada que sale desde el área de glamping y entra al bosque por senderos de sombra. El destino es una cascada escondida, ideal para un baño refrescante y un descanso con vista.\n\nEl recorrido es de dificultad media y se adapta al ritmo del grupo. Lleva ropa que se pueda mojar y calzado con agarre.",
-    price: 120000,
-    unit: "persona",
-    duration: "4 horas",
-    difficulty: "Media",
-    age: 8,
-    max: 12,
-    includes: ["Guía local", "Entrada a la cascada", "Snack de fruta", "Bastón de caminata"],
-    requirements: "Calzado con agarre, ropa de cambio y protector solar.",
-    image: "/images/act-cascada.jpg",
+      "Una receta casera convertida en galleta: avena integral, huevo y un toque de miel. Horneamos cada lote hasta que queda firme por fuera y suave por dentro.\n\nEl tamaño bocado las hace ideales para premios frecuentes y para perros de todos los tamaños. También son una buena opción para gatos curiosos, siempre en porciones pequeñas.",
+    price: 14900,
+    compare: null,
+    stock: 48,
+    sku: "CAR-PR-001",
+    unit: "paquete",
+    weight: "150 g",
+    pet: "ambos",
+    benefits: ["Avena integral", "Tamaño bocado", "Horneadas a mano", "Sin azúcar añadida"],
+    ingredients: "Avena integral, huevo, miel, aceite de coco y canela.",
+    image: "/images/productos/galletas-avena.svg",
     featured: true,
     sort: 3,
   },
   {
-    slug: "cabalgata-al-atardecer",
-    name: "Cabalgata al Atardecer",
-    category: "Campo",
-    short: "Recorre los caminos del cañón a caballo y termina con el cielo encendido.",
+    slug: "croquetas-de-salmon",
+    name: "Croquetas de salmón",
+    category: "comida-saludable",
+    short: "Comida completa para gatos con salmón, arroz integral y caldo de pescado.",
     description:
-      "Una cabalgata tranquila por caminos rurales, guiada por arrieros de la zona. El recorrido se ajusta al nivel de los participantes y termina en un mirador para ver el atardecer sobre el cañón.\n\nEs una actividad ideal para familias y para quienes prefieren una aventura suave. Los caballos y el equipo se asignan según la experiencia de cada persona.",
-    price: 140000,
-    unit: "persona",
-    duration: "2 horas",
-    difficulty: "Baja",
-    age: 6,
-    max: 8,
-    includes: ["Caballo y montura", "Arriero guía", "Casco", "Hidratación"],
-    requirements: "Peso máximo 100 kg. Menores acompañados por un adulto.",
-    image: "/images/act-cabalgata.jpg",
-    featured: false,
+      "Una receta húmeda y aromática para gatos exigentes. El salmón aporta proteína de alta calidad y omega 3, mientras el arroz integral y las verduras completan una porción equilibrada.\n\nSe puede servir sola o mezclada con su comida habitual. Viene en porciones individuales para mantener la frescura.",
+    price: 48900,
+    compare: null,
+    stock: 4,
+    sku: "CAR-CO-001",
+    unit: "paquete",
+    weight: "500 g",
+    pet: "gato",
+    benefits: ["Omega 3", "Proteína de salmón", "Sin subproductos", "Porciones individuales"],
+    ingredients: "Salmón, arroz integral, zanahoria, caldo de pescado y aceite de salmón.",
+    image: "/images/productos/croquetas-salmon.svg",
+    featured: true,
     sort: 4,
   },
   {
-    slug: "senderismo-mirador",
-    name: "Senderismo al Mirador",
-    category: "Naturaleza",
-    short: "Sube al punto más alto de la finca y entiende la escala del cañón.",
+    slug: "pollo-con-verduras",
+    name: "Pollo con verduras",
+    category: "comida-saludable",
+    short: "Receta completa de pollo, calabaza, zanahoria y arroz para perros.",
     description:
-      "Un sendero de ascenso progresivo hasta el mirador principal. En el camino, el guía comparte historias sobre el bosque, el río y las comunidades del cañón. Arriba, el paisaje abierto recompensa el esfuerzo.\n\nLa caminata es de dificultad media y se realiza temprano para aprovechar la luz y el clima fresco.",
-    price: 90000,
-    unit: "persona",
-    duration: "3 horas",
-    difficulty: "Media",
-    age: 6,
-    max: 15,
-    includes: ["Guía local", "Bastón de caminata", "Snack", "Hidratación"],
-    requirements: "Calzado deportivo, gorra y protector solar.",
-    image: "/images/act-senderismo.jpg",
+      "Comida cocinada a baja temperatura con pollo desmechado, calabaza, zanahoria y arroz integral. Una mezcla suave y fácil de digerir, pensada para perros de todas las edades.\n\nSirve como complemento de su alimentación o como comida completa según su tamaño y nivel de actividad. Consulta con tu veterinario si tu perro tiene necesidades especiales.",
+    price: 42900,
+    compare: 46900,
+    stock: 18,
+    sku: "CAR-CO-002",
+    unit: "paquete",
+    weight: "500 g",
+    pet: "perro",
+    benefits: ["Fácil de digerir", "Verduras reales", "Cocción suave", "Sin colorantes"],
+    ingredients: "Pollo, calabaza, zanahoria, arroz integral y aceite de coco.",
+    image: "/images/productos/pollo-verduras.svg",
     featured: true,
     sort: 5,
   },
   {
-    slug: "avistamiento-de-aves",
-    name: "Avistamiento de Aves",
-    category: "Naturaleza",
-    short: "Salida de madrugada con binoculares para descubrir las aves del bosque nublado.",
+    slug: "premios-de-calabaza",
+    name: "Premios de calabaza",
+    category: "premios-entrenamiento",
+    short: "Bocaditos suaves de calabaza y avena, ricos en fibra y muy fáciles de partir.",
     description:
-      "Una salida tranquila al amanecer, cuando el bosque está más activo. Con binoculares y la guía de un conocedor local, identificamos especies del bosque nublado y aprendemos a escuchar el paisaje.\n\nNo se requiere experiencia. La actividad es de bajo impacto y respeta los senderos y las distancias de observación.",
-    price: 110000,
-    unit: "persona",
-    duration: "2.5 horas",
-    difficulty: "Baja",
-    age: 5,
-    max: 10,
-    includes: ["Guía especializado", "Binoculares", "Café de bienvenida", "Lista de especies"],
-    requirements: "Ropa de abrigo, silencio y paciencia.",
-    image: "/images/act-avistamiento.jpg",
+      "La calabaza es una aliada natural de la digestión. La mezclamos con avena y la horneamos en bocaditos suaves que se pueden partir con la mano, perfectos para premiar sin excederse.\n\nIdeales para cachorros, perros mayores o mascotas con estómagos sensibles.",
+    price: 12900,
+    compare: null,
+    stock: 60,
+    sku: "CAR-PR-002",
+    unit: "paquete",
+    weight: "100 g",
+    pet: "ambos",
+    benefits: ["Rica en fibra", "Textura suave", "Fácil de partir", "Apta para cachorros"],
+    ingredients: "Calabaza, avena integral, huevo y canela.",
+    image: "/images/productos/premios-calabaza.svg",
     featured: false,
     sort: 6,
   },
   {
-    slug: "caminata-nocturna",
-    name: "Caminata Nocturna",
-    category: "Naturaleza",
-    short: "Descubre el bosque de noche: sonidos, luciérnagas y cielo abierto.",
+    slug: "masticable-de-yuca",
+    name: "Masticable de yuca",
+    category: "masticables",
+    short: "Barras de yuca deshidratada, duraderas y sin granos ni aditivos.",
     description:
-      "Una caminata corta y guiada por senderos seguros para conocer el bosque cuando cae la noche. Escuchamos insectos y aves nocturnas, observamos el cielo y aprendemos a movernos sin alterar el entorno.\n\nLa actividad termina alrededor de una fogata con chocolate caliente. Es una experiencia perfecta para cerrar el día.",
-    price: 80000,
-    unit: "persona",
-    duration: "2 horas",
-    difficulty: "Baja",
-    age: 8,
-    max: 12,
-    includes: ["Guía local", "Linterna", "Chocolate caliente", "Fogata"],
-    requirements: "Calzado cerrado y chaqueta abrigada.",
-    image: "/images/act-caminata.jpg",
+      "Un masticable vegetal para perros que necesitan algo que dure. La yuca se pela, se corta y se deshidrata lentamente hasta obtener una textura firme que se va ablandando con la saliva.\n\nNo contiene granos, trigo ni conservantes. Supervisa siempre a tu perro mientras mastica y retira el producto cuando quede muy pequeño.",
+    price: 15900,
+    compare: null,
+    stock: 35,
+    sku: "CAR-MA-001",
+    unit: "paquete",
+    weight: "2 unidades",
+    pet: "perro",
+    benefits: ["Sin granos", "Larga duración", "Origen vegetal", "Ayuda a la masticación"],
+    ingredients: "Yuca 100%.",
+    image: "/images/productos/masticable-yuca.svg",
     featured: false,
     sort: 7,
   },
+  {
+    slug: "snack-de-atun-para-gatos",
+    name: "Snack de atún para gatos",
+    category: "para-gatos",
+    short: "Atún al vapor en porciones pequeñas, ideal como premio o para mezclar.",
+    description:
+      "Atún al vapor, sin sal añadida, en porciones pequeñas que funcionan como premio o como complemento de la comida. Su aroma es irresistible incluso para gatos que suelen ser selectivos.\n\nRecomendamos ofrecerlo como complemento, no como reemplazo de una dieta completa.",
+    price: 17900,
+    compare: null,
+    stock: 26,
+    sku: "CAR-GA-001",
+    unit: "paquete",
+    weight: "70 g",
+    pet: "gato",
+    benefits: ["Atún al vapor", "Sin sal añadida", "Aroma intenso", "Porciones pequeñas"],
+    ingredients: "Atún, agua y aceite de pescado.",
+    image: "/images/productos/snack-atun.svg",
+    featured: true,
+    sort: 8,
+  },
+  {
+    slug: "frutas-deshidratadas",
+    name: "Frutas deshidratadas",
+    category: "snacks-naturales",
+    short: "Mezcla de manzana, naranja y plátano deshidratados, sin azúcar añadida.",
+    description:
+      "Una mezcla de frutas de temporada deshidratadas a baja temperatura. El resultado es un snack crujiente y natural, sin azúcar añadida ni conservantes.\n\nEs una opción distinta para variar los premios y aportar fibra. Ofrece siempre en porciones moderadas y retira las semillas.",
+    price: 13900,
+    compare: null,
+    stock: 44,
+    sku: "CAR-SN-003",
+    unit: "paquete",
+    weight: "90 g",
+    pet: "ambos",
+    benefits: ["Sin azúcar añadida", "Fibra natural", "Mezcla de frutas", "Textura crujiente"],
+    ingredients: "Manzana, naranja y plátano deshidratados.",
+    image: "/images/productos/frutas-deshidratadas.svg",
+    featured: false,
+    sort: 9,
+  },
+  {
+    slug: "hueso-de-cuero-natural",
+    name: "Hueso de cuero natural",
+    category: "masticables",
+    short: "Cuero de res prensado en forma de hueso, resistente y sin tratamientos químicos.",
+    description:
+      "Cuero de res natural, prensado y cortado en forma de hueso. Es un masticable resistente que mantiene a los perros entretenidos y ayuda a la limpieza mecánica de los dientes.\n\nNo recibe tratamientos químicos ni blanqueadores. Elige el tamaño adecuado para tu perro y supervisa siempre el momento de la masticación.",
+    price: 21900,
+    compare: null,
+    stock: 20,
+    sku: "CAR-MA-002",
+    unit: "unidad",
+    weight: "1 unidad",
+    pet: "perro",
+    benefits: ["Cuero natural", "Sin blanqueadores", "Larga duración", "Ayuda dental"],
+    ingredients: "Cuero de res 100%.",
+    image: "/images/productos/hueso-cuero.svg",
+    featured: false,
+    sort: 10,
+  },
 ];
 
-const services = [
-  ["Desayuno campestre adicional", "Fruta, huevos al gusto, pan artesanal, café del Huila y jugo natural.", 35000, "persona", "/images/serv-desayuno.jpg", 1],
-  ["Transporte desde Neiva", "Recogida y regreso en vehículo privado para hasta 4 personas. Sujeto a disponibilidad.", 280000, "grupo", "/images/serv-transporte.jpg", 2],
-  ["Sesión de fotografía", "Una hora de fotografía editorial en los espacios del glamping. Incluye 15 fotos editadas.", 320000, "sesión", "/images/serv-fotografia.jpg", 3],
-  ["Fogata con marshmallows", "Fogata preparada, sillas, mantas y kit de marshmallows para el grupo.", 60000, "grupo", "/images/glamping-fogata.jpg", 4],
-  ["Decoración romántica", "Pétalos, velas LED, globos y mensaje personalizado en el alojamiento.", 180000, "servicio", "/images/glamping-lujo.jpg", 5],
-  ["Late checkout", "Extiende la salida hasta las 3:00 p. m., sujeto a disponibilidad del alojamiento.", 50000, "servicio", "/images/glamping-interior.jpg", 6],
+const demoOrders = [
+  {
+    code: "CAR-DEMO01",
+    name: "María Fernanda López",
+    email: "maria.demo@example.com",
+    phone: "+57 310 000 0001",
+    delivery: "delivery",
+    address: "Carrera 35 # 8A-40, El Poblado",
+    city: "Medellín",
+    status: "delivered",
+    paymentMethod: "nequi",
+    paymentStatus: "paid",
+    notes: "Dejar en portería si no hay nadie.",
+    daysAgo: 18,
+    items: [
+      ["hueso-de-pollo-desecado", 2],
+      ["galletas-de-avena-y-miel", 1],
+      ["snack-de-atun-para-gatos", 1],
+    ],
+    shipping: 0,
+  },
+  {
+    code: "CAR-DEMO02",
+    name: "Andrés Felipe Ramírez",
+    email: "andres.demo@example.com",
+    phone: "+57 310 000 0002",
+    delivery: "delivery",
+    address: "Carrera 43 # 25-10",
+    city: "Medellín",
+    status: "shipped",
+    paymentMethod: "bancolombia",
+    paymentStatus: "unpaid",
+    notes: "Enviar por Servientrega.",
+    daysAgo: 5,
+    items: [
+      ["pollo-con-verduras", 1],
+      ["chips-de-higado-de-res", 2],
+    ],
+    shipping: 12000,
+  },
+  {
+    code: "CAR-DEMO03",
+    name: "Carolina Gómez",
+    email: "carolina.demo@example.com",
+    phone: "+57 310 000 0003",
+    delivery: "pickup",
+    address: "",
+    city: "Medellín",
+    status: "confirmed",
+    paymentMethod: "cash",
+    paymentStatus: "unpaid",
+    notes: "Recoge el sábado en la mañana.",
+    daysAgo: 2,
+    items: [
+      ["croquetas-de-salmon", 2],
+      ["frutas-deshidratadas", 1],
+    ],
+    shipping: 0,
+  },
+  {
+    code: "CAR-DEMO04",
+    name: "Julián Ospina",
+    email: "julian.demo@example.com",
+    phone: "+57 310 000 0004",
+    delivery: "delivery",
+    address: "Calle 5 # 8-20, Centro",
+    city: "Neiva",
+    status: "pending",
+    paymentMethod: "transfer",
+    paymentStatus: "unpaid",
+    notes: "",
+    daysAgo: 0,
+    items: [
+      ["masticable-de-yuca", 1],
+      ["hueso-de-cuero-natural", 1],
+      ["premios-de-calabaza", 2],
+    ],
+    shipping: 12000,
+  },
 ];
 
-const gallery = [
-  ["/images/hero-canon.jpg", "El cañón al amanecer", "Paisaje"],
-  ["/images/hero-grupo.jpg", "Aventura en grupo", "Aventura"],
-  ["/images/glamping-domos.jpg", "Domo Mirador del Cañón", "Glamping"],
-  ["/images/glamping-rio.jpg", "Cabaña Río Magdalena", "Glamping"],
-  ["/images/glamping-bosque.jpg", "Safari Bosque Nublado", "Glamping"],
-  ["/images/glamping-lujo.jpg", "Suite del Cañón", "Glamping"],
-  ["/images/glamping-fogata.jpg", "Refugio Fogata", "Glamping"],
-  ["/images/glamping-interior.jpg", "Interiores con textiles cálidos", "Detalles"],
-  ["/images/glamping-interior2.jpg", "Habitación principal", "Detalles"],
-  ["/images/act-rafting.jpg", "Rafting en el Magdalena", "Aventura"],
-  ["/images/act-escalada.jpg", "Escalada en roca", "Aventura"],
-  ["/images/act-cascada.jpg", "Cascada escondida", "Naturaleza"],
-  ["/images/act-cabalgata.jpg", "Cabalgata al atardecer", "Aventura"],
-  ["/images/act-senderismo.jpg", "Senderismo al mirador", "Naturaleza"],
-  ["/images/act-avistamiento.jpg", "Avistamiento de aves", "Naturaleza"],
-  ["/images/gal-atardecer.jpg", "Atardecer sobre el cañón", "Paisaje"],
-  ["/images/gal-noche.jpg", "Cielo nocturno", "Paisaje"],
-  ["/images/gal-piscina.jpg", "Zona de descanso", "Glamping"],
-  ["/images/gal-canon.jpg", "Formaciones del cañón", "Paisaje"],
-  ["/images/gal-desierto.jpg", "Senderos abiertos", "Paisaje"],
+const demoMessages = [
+  {
+    name: "Laura Martínez",
+    email: "laura.demo@example.com",
+    phone: "+57 315 000 0001",
+    subject: "Consulta por la comida de pollo",
+    message:
+      "Hola, tengo un perro de 8 años con estómago sensible. ¿La receta de pollo con verduras sirve como comida completa? ¿Qué porción le daría?",
+    status: "new",
+    daysAgo: 1,
+  },
+  {
+    name: "Diego Herrera",
+    email: "diego.demo@example.com",
+    phone: "+57 315 000 0002",
+    subject: "Envío a Pereira",
+    message:
+      "Quiero pedir dos paquetes de croquetas de salmón para mi gata. ¿Cuánto tarda el envío a Pereira y cuánto cuesta?",
+    status: "read",
+    daysAgo: 4,
+  },
 ];
 
 export async function seed() {
@@ -312,9 +361,9 @@ export async function seed() {
   try {
     await client.query("begin");
 
-    const adminName = process.env.ADMIN_NAME || "Administrador";
-    const adminEmail = (process.env.ADMIN_EMAIL || "admin@adrenalinaextrema.co").toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD || "Adrenalina2026!";
+    const adminName = process.env.ADMIN_NAME || "Administrador Carnalitos";
+    const adminEmail = (process.env.ADMIN_EMAIL || "admin@carnalitos.co").toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || "Carnalitos2026!";
     await client.query(
       `insert into admin_users (name, email, password_hash, role)
        values ($1, $2, $3, 'admin')
@@ -324,227 +373,136 @@ export async function seed() {
     );
     console.log(`✓ Administrador: ${adminEmail}`);
 
-    for (const g of glampings) {
-      const weekend = g.weekend ?? Math.round((g.price * 1.15) / 1000) * 1000;
-      const holiday = g.holiday ?? Math.round((g.price * 1.25) / 1000) * 1000;
-      const existing = await client.query("select id from glampings where slug = $1", [g.slug]);
-      let id = existing.rows[0]?.id;
-      if (!id) {
-        const inserted = await client.query(
-          `insert into glampings
-            (slug, name, tagline, short_description, description, price_per_night,
-             weekend_price_per_night, holiday_price_per_night, capacity,
-             bedrooms, bathrooms, size_m2, amenities, includes, conditions, location, main_image,
-             active, featured, sort_order)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,true,$18,$19)
-           returning id`,
-          [
-            g.slug, g.name, g.tagline, g.short_description, g.description, g.price,
-            weekend, holiday, g.capacity,
-            g.bedrooms, g.bathrooms, g.size, g.amenities, g.includes, g.conditions,
-            "Cañón del Magdalena, Huila", g.image, g.featured, g.sort,
-          ],
-        );
-        id = inserted.rows[0].id;
-      } else {
-        // Para filas existentes calculamos el valor sugerido a partir del precio
-        // actual en la base de datos (el administrador pudo haberlo cambiado).
-        // No sobrescribe tarifas ya configuradas.
-        await client.query(
-          `update glampings set
-             weekend_price_per_night = coalesce(weekend_price_per_night, round(price_per_night * 1.15 / 1000) * 1000),
-             holiday_price_per_night = coalesce(holiday_price_per_night, round(price_per_night * 1.25 / 1000) * 1000)
-           where id = $1`,
-          [id],
-        );
-      }
-
-      const imageCount = await client.query("select count(*)::int as n from glamping_images where glamping_id = $1", [id]);
-      if (imageCount.rows[0].n === 0) {
-        for (let i = 0; i < g.gallery.length; i++) {
-          const [url, alt] = g.gallery[i];
-          await client.query(
-            `insert into glamping_images (glamping_id, url, alt, sort_order, is_main)
-             values ($1,$2,$3,$4,$5)`,
-            [id, url, alt, i, i === 0],
-          );
-        }
-      }
-    }
-    console.log(`✓ ${glampings.length} glampings`);
-
-    for (const a of activities) {
-      const weekend = a.weekend ?? Math.round((a.price * 1.1) / 1000) * 1000;
-      const holiday = a.holiday ?? Math.round((a.price * 1.2) / 1000) * 1000;
-      await client.query(
-        `insert into activities
-          (slug, name, category, short_description, description, price,
-           weekend_price, holiday_price, price_unit, duration,
-           difficulty, min_age, max_people, includes, requirements, image, active, featured, sort_order)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,true,$17,$18)
+    const categoryIds = {};
+    for (const category of categories) {
+      const row = await client.query(
+        `insert into categories (slug, name, description, icon, sort_order, active)
+         values ($1,$2,$3,$4,$5,true)
          on conflict (slug) do update set
-           name = excluded.name, category = excluded.category, short_description = excluded.short_description,
-           description = excluded.description, price = excluded.price,
-           weekend_price = coalesce(activities.weekend_price, round(excluded.price * 1.1 / 1000) * 1000),
-           holiday_price = coalesce(activities.holiday_price, round(excluded.price * 1.2 / 1000) * 1000),
-           duration = excluded.duration,
-           difficulty = excluded.difficulty, min_age = excluded.min_age, max_people = excluded.max_people,
-           includes = excluded.includes, requirements = excluded.requirements, image = excluded.image,
-           featured = excluded.featured, sort_order = excluded.sort_order`,
+           name = excluded.name,
+           description = excluded.description,
+           icon = excluded.icon,
+           sort_order = excluded.sort_order
+         returning id`,
+        [category.slug, category.name, category.description, category.icon, category.sort],
+      );
+      categoryIds[category.slug] = row.rows[0].id;
+    }
+    console.log(`✓ ${categories.length} categorías`);
+
+    for (const product of products) {
+      await client.query(
+        `insert into products
+          (slug, name, category_id, short_description, description, price, compare_at_price,
+           stock, sku, unit, weight, pet_type, benefits, ingredients, image, active, featured, sort_order)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,true,$16,$17)
+         on conflict (slug) do nothing`,
         [
-          a.slug, a.name, a.category, a.short, a.description, a.price,
-          weekend, holiday, a.unit, a.duration,
-          a.difficulty, a.age, a.max, a.includes, a.requirements, a.image, a.featured, a.sort,
+          product.slug,
+          product.name,
+          categoryIds[product.category] ?? null,
+          product.short,
+          product.description,
+          product.price,
+          product.compare,
+          product.stock,
+          product.sku,
+          product.unit,
+          product.weight,
+          product.pet,
+          product.benefits,
+          product.ingredients,
+          product.image,
+          product.featured,
+          product.sort,
         ],
       );
     }
-    console.log(`✓ ${activities.length} actividades`);
+    console.log(`✓ ${products.length} productos`);
 
-    const serviceCount = await client.query("select count(*)::int as n from services");
-    if (serviceCount.rows[0].n === 0) {
-      for (const [name, description, price, unit, image, sort] of services) {
-        await client.query(
-          `insert into services (name, description, price, price_unit, image, sort_order)
-           values ($1,$2,$3,$4,$5,$6)`,
-          [name, description, price, unit, image, sort],
-        );
-      }
-    }
-    console.log(`✓ ${services.length} servicios`);
+    const orderCount = await client.query("select count(*)::int as n from orders");
+    if (orderCount.rows[0].n === 0) {
+      for (const demo of demoOrders) {
+        const itemRows = [];
+        for (const [slug, quantity] of demo.items) {
+          const row = await client.query(
+            "select id, name, price, image from products where slug = $1",
+            [slug],
+          );
+          const product = row.rows[0];
+          if (!product) continue;
+          itemRows.push({
+            id: product.id,
+            name: product.name,
+            price: Number(product.price),
+            image: product.image,
+            quantity,
+          });
+        }
+        if (itemRows.length === 0) continue;
 
-    const galleryCount = await client.query("select count(*)::int as n from gallery_images");
-    if (galleryCount.rows[0].n === 0) {
-      for (let i = 0; i < gallery.length; i++) {
-        const [url, alt, category] = gallery[i];
-        await client.query(
-          "insert into gallery_images (url, alt, category, sort_order) values ($1,$2,$3,$4)",
-          [url, alt, category, i],
-        );
-      }
-    }
-    console.log(`✓ ${gallery.length} imágenes de galería`);
-
-    // Tarifa de temporada de ejemplo (diciembre próximo)
-    const rateCount = await client.query("select count(*)::int as n from glamping_rates");
-    if (rateCount.rows[0].n === 0) {
-      const year = new Date().getFullYear();
-      const start = `${year}-12-20`;
-      const end = `${year + 1}-01-10`;
-      await client.query(
-        `insert into glamping_rates (glamping_id, name, start_date, end_date, price_per_night, min_nights)
-         select id, 'Temporada alta', $1, $2, round(price_per_night * 1.2), 2 from glampings where active = true`,
-        [start, end],
-      );
-    }
-
-    // Reservas de ejemplo para que el panel tenga información desde el primer arranque
-    const bookingCount = await client.query("select count(*)::int as n from bookings");
-    if (bookingCount.rows[0].n === 0) {
-      const g = await client.query("select id, slug, price_per_night from glampings order by sort_order");
-      const bySlug = Object.fromEntries(g.rows.map((r) => [r.slug, r]));
-      const a = await client.query("select id, name, price from activities order by sort_order limit 3");
-
-      const demos = [
-        {
-          code: "AEH-DEMO01",
-          glamping: bySlug["domo-mirador-del-canon"],
-          name: "María Fernanda López",
-          email: "maria.demo@example.com",
-          phone: "+57 310 000 0001",
-          city: "Neiva",
-          offsetIn: 12,
-          offsetOut: 14,
-          guests: 2,
-          status: "confirmed",
-          payment: "deposit",
-          source: "web",
-        },
-        {
-          code: "AEH-DEMO02",
-          glamping: bySlug["cabana-rio-magdalena"],
-          name: "Andrés Felipe Ramírez",
-          email: "andres.demo@example.com",
-          phone: "+57 310 000 0002",
-          city: "Bogotá",
-          offsetIn: 24,
-          offsetOut: 27,
-          guests: 4,
-          status: "pending",
-          payment: "none",
-          source: "whatsapp",
-        },
-        {
-          code: "AEH-DEMO03",
-          glamping: bySlug["suite-del-canon"],
-          name: "Carolina Gómez",
-          email: "carolina.demo@example.com",
-          phone: "+57 310 000 0003",
-          city: "Cali",
-          offsetIn: -22,
-          offsetOut: -20,
-          guests: 2,
-          status: "completed",
-          payment: "full",
-          source: "web",
-        },
-      ];
-
-      for (const d of demos) {
-        if (!d.glamping) continue;
-        const nights = d.offsetOut - d.offsetIn;
-        const nightly = Number(d.glamping.price_per_night);
-        const subtotal = nights * nightly;
-        const activitiesTotal = d.status === "pending" ? 0 : 180000 * d.guests;
-        const total = subtotal + activitiesTotal;
-        const deposit = Math.round(total * 0.3 / 100) * 100;
-        const paid = d.payment === "full" ? total : d.payment === "deposit" ? deposit : 0;
-        const paymentStatus = d.payment === "full" ? "paid" : d.payment === "deposit" ? "deposit_paid" : "unpaid";
-
-        const customer = await client.query(
-          `insert into customers (full_name, email, phone, city)
-           values ($1,$2,$3,$4)
-           on conflict (lower(email)) where email <> '' do update set full_name = excluded.full_name, phone = excluded.phone
-           returning id`,
-          [d.name, d.email, d.phone, d.city],
-        );
-
-        const booking = await client.query(
-          `insert into bookings
-            (code, customer_id, glamping_id, guest_name, guest_email, guest_phone, guest_city,
-             check_in, check_out, guests, nights, nightly_rate, subtotal, activities_total,
-             services_total, total, deposit_required, paid_amount, balance, status, payment_status,
-             source, notes, created_at)
-           values ($1,$2,$3,$4,$5,$6,$7,
-             current_date + $8::int, current_date + $9::int, $10,$11,$12,$13,$14,0,$15,$16,$17,$18,$19,$20,$21,$22,
-             case when $23 = 'completed' then now() - interval '30 days' else now() - interval '3 days' end)
+        const subtotal = itemRows.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const total = subtotal + demo.shipping;
+        const order = await client.query(
+          `insert into orders
+            (code, customer_name, customer_email, customer_phone, delivery_method,
+             address, city, notes, subtotal, shipping, total, status,
+             payment_method, payment_status, created_at, updated_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+             now() - ($15 || ' days')::interval, now() - ($15 || ' days')::interval)
            on conflict (code) do nothing
            returning id`,
           [
-            d.code, customer.rows[0].id, d.glamping.id, d.name, d.email, d.phone, d.city,
-            d.offsetIn, d.offsetOut, d.guests, nights, nightly, subtotal, activitiesTotal,
-            total, deposit, paid, total - paid, d.status, paymentStatus, d.source,
-            d.status === "pending" ? "Solicitud creada desde WhatsApp; confirmar disponibilidad y anticipo." : "",
-            d.status,
+            demo.code,
+            demo.name,
+            demo.email,
+            demo.phone,
+            demo.delivery,
+            demo.address,
+            demo.city,
+            demo.notes,
+            subtotal,
+            demo.shipping,
+            total,
+            demo.status,
+            demo.paymentMethod,
+            demo.paymentStatus,
+            String(demo.daysAgo),
           ],
         );
-
-        if (booking.rowCount && activitiesTotal > 0) {
+        if (!order.rows[0]) continue;
+        const orderId = order.rows[0].id;
+        for (const item of itemRows) {
           await client.query(
-            `insert into booking_activities (booking_id, activity_id, activity_name, quantity, unit_price, total)
-             values ($1,$2,$3,$4,$5,$6)`,
-            [booking.rows[0].id, a.rows[0].id, a.rows[0].name, d.guests, 180000, activitiesTotal],
-          );
-        }
-
-        if (booking.rowCount && paid > 0) {
-          await client.query(
-            `insert into payments (booking_id, amount, method, reference, status, paid_at, notes, created_by)
-             values ($1,$2,'nequi','DEMO-' || $3,'approved', current_date - 2, 'Pago de ejemplo', 'seed')`,
-            [booking.rows[0].id, paid, d.code],
+            `insert into order_items (order_id, product_id, product_name, unit_price, quantity, total, image)
+             values ($1,$2,$3,$4,$5,$6,$7)`,
+            [orderId, item.id, item.name, item.price, item.quantity, item.price * item.quantity, item.image],
           );
         }
       }
-      console.log("✓ Reservas de ejemplo creadas");
+      console.log(`✓ ${demoOrders.length} pedidos de ejemplo`);
+    } else {
+      console.log("· Pedidos existentes: no se crean datos demo");
+    }
+
+    const messageCount = await client.query("select count(*)::int as n from contact_messages");
+    if (messageCount.rows[0].n === 0) {
+      for (const message of demoMessages) {
+        await client.query(
+          `insert into contact_messages (name, email, phone, subject, message, status, created_at)
+           values ($1,$2,$3,$4,$5,$6, now() - ($7 || ' days')::interval)`,
+          [
+            message.name,
+            message.email,
+            message.phone,
+            message.subject,
+            message.message,
+            message.status,
+            String(message.daysAgo),
+          ],
+        );
+      }
+      console.log(`✓ ${demoMessages.length} mensajes de ejemplo`);
     }
 
     await client.query("commit");

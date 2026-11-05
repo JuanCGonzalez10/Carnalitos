@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Icon, { type IconName } from "@/components/ui/Icon";
-import Logo, { LogoMark } from "@/components/brand/Logo";
+import Logo from "@/components/brand/Logo";
 import { initials } from "@/lib/utils/format";
 import type { AdminUser } from "@/types";
 
@@ -13,18 +13,15 @@ const NAV: Array<{ label: string; items: Array<{ href: string; label: string; ic
     label: "Operación",
     items: [
       { href: "/admin", label: "Panel", icon: "dashboard" },
-      { href: "/admin/reservas", label: "Reservas", icon: "bookings" },
-      { href: "/admin/clientes", label: "Clientes", icon: "users" },
+      { href: "/admin/pedidos", label: "Pedidos", icon: "package" },
       { href: "/admin/mensajes", label: "Mensajes", icon: "mail" },
     ],
   },
   {
     label: "Catálogo",
     items: [
-      { href: "/admin/glampings", label: "Glampings", icon: "tent" },
-      { href: "/admin/actividades", label: "Actividades", icon: "mountain" },
-      { href: "/admin/servicios", label: "Servicios", icon: "sparkles" },
-      { href: "/admin/galeria", label: "Galería", icon: "image" },
+      { href: "/admin/productos", label: "Productos", icon: "tag" },
+      { href: "/admin/categorias", label: "Categorías", icon: "grid" },
     ],
   },
   {
@@ -40,13 +37,10 @@ const NAV: Array<{ label: string; items: Array<{ href: string; label: string; ic
 function sectionTitle(pathname: string): string {
   const map: Record<string, string> = {
     "/admin": "Panel general",
-    "/admin/reservas": "Reservas",
-    "/admin/clientes": "Clientes",
+    "/admin/pedidos": "Pedidos",
     "/admin/mensajes": "Mensajes",
-    "/admin/glampings": "Glampings",
-    "/admin/actividades": "Actividades",
-    "/admin/servicios": "Servicios",
-    "/admin/galeria": "Galería",
+    "/admin/productos": "Productos",
+    "/admin/categorias": "Categorías",
     "/admin/reportes": "Reportes",
     "/admin/configuracion": "Configuración",
   };
@@ -87,9 +81,9 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
 
   const nav = (
     <>
-      <div className="flex h-24 items-center justify-between border-b border-white/10 px-5">
-        <Logo light size="normal" imageClassName="!h-14 sm:!h-16" />
-        <span className="rounded bg-lime-400/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-lime-400">
+      <div className="flex h-24 flex-col justify-center gap-1.5 border-b border-white/10 px-5">
+        <Logo light compact imageClassName="!h-11" />
+        <span className="w-fit rounded bg-lime-400/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-lime-400">
           Admin
         </span>
       </div>
@@ -163,8 +157,8 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/reservar" target="_blank" className="hidden items-center gap-2 rounded-full border border-ink/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest text-ink/50 transition hover:border-jungle-500 hover:text-jungle-700 sm:flex">
-                <Icon name="calendar" className="h-3.5 w-3.5" /> Nueva reserva
+              <Link href="/tienda" target="_blank" className="hidden items-center gap-2 rounded-full border border-ink/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest text-ink/50 transition hover:border-jungle-500 hover:text-jungle-700 sm:flex">
+                <Icon name="bag" className="h-3.5 w-3.5" /> Ver tienda
               </Link>
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-jungle-950 text-[10px] font-extrabold text-lime-400" title={user.email}>
                 {initials(user.name)}
@@ -176,7 +170,7 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
         <main className="admin-main p-4 sm:p-6 lg:p-8">{children}</main>
 
         <footer className="admin-footer border-t border-ink/[0.06] px-4 py-5 text-center text-[10px] text-ink/30 sm:px-6 lg:px-8">
-          Adrenalina Extrema Huila · Panel administrativo · {new Date().getFullYear()}
+          Carnalitos · Panel administrativo · {new Date().getFullYear()}
         </footer>
       </div>
 

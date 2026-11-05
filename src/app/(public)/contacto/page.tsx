@@ -4,19 +4,22 @@ import PageHero from "@/components/shared/PageHero";
 import ContactForm from "@/components/forms/ContactForm";
 import Reveal from "@/components/shared/Reveal";
 import Icon from "@/components/ui/Icon";
-import { getSettings, buildWhatsAppUrl } from "@/lib/settings";
+import { buildWhatsAppUrl, getSettings } from "@/lib/settings";
+import { formatCOP } from "@/lib/store/format";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Contacto y ubicación",
-  description: "Escríbenos para reservar, preguntar por disponibilidad o planear tu visita al Cañón del Magdalena, Huila.",
+  title: "Contacto y envíos",
+  description:
+    "Escríbenos para preguntar por productos, pedidos, envíos o alimentación de tu mascota. Carnalitos, snacks naturales para perros y gatos.",
 };
 
 export default async function ContactPage() {
   const settings = await getSettings();
   const business = settings.business;
-  const whatsapp = buildWhatsAppUrl(business.whatsapp, "Hola, quiero información sobre Adrenalina Extrema Huila.");
+  const store = settings.store;
+  const whatsapp = buildWhatsAppUrl(business.whatsapp, "Hola Carnalitos, quiero información sobre sus productos.");
 
   const contactItems = [
     { icon: "whatsapp" as const, label: "WhatsApp", value: business.phone, href: whatsapp },
@@ -29,18 +32,19 @@ export default async function ContactPage() {
     <>
       <PageHero
         eyebrow="Contacto"
-        title="Hablemos de tu próxima aventura"
-        description="¿Dudas con las fechas, un grupo grande o una sorpresa especial? Escríbenos y armamos el plan contigo."
-        image="/images/gal-atardecer.jpg"
+        title="Hablemos de tu mascota"
+        description="¿Dudas sobre ingredientes, porciones o tu pedido? Escríbenos y te ayudamos a elegir lo mejor para tu compañero."
+        image="/images/brand/page-hero.svg"
       />
 
       <section className="py-14 sm:py-20">
         <div className="container-site grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
           <Reveal>
             <p className="eyebrow">Estamos cerca</p>
-            <h2 className="mt-3 text-3xl uppercase sm:text-4xl">El cañón te espera</h2>
+            <h2 className="mt-3 text-3xl uppercase sm:text-4xl">Atención de verdad</h2>
             <p className="mt-4 max-w-md text-sm leading-7 text-ink/60">
-              Atendemos reservas directas y consultas por WhatsApp. Si vienes en grupo, cuéntanos cuántas personas son y qué tipo de experiencia buscan.
+              Respondemos por WhatsApp y correo. Si tienes un pedido en curso, incluye el código
+              <strong className="text-jungle-800"> CAR-XXXXXXXX</strong> para ayudarte más rápido.
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -71,8 +75,8 @@ export default async function ContactPage() {
             <div id="ubicacion" className="mt-8 overflow-hidden rounded-2xl border border-ink/10">
               <div className="h-[300px]">
                 <iframe
-                  title="Ubicación de Adrenalina Extrema Huila"
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(business.mapQuery)}&z=9&output=embed`}
+                  title="Ubicación de Carnalitos"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(business.mapQuery)}&z=12&output=embed`}
                   className="h-full w-full"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -80,7 +84,7 @@ export default async function ContactPage() {
               </div>
               <div className="bg-white p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold"><Icon name="pin" className="h-4 w-4 text-jungle-600" /> {business.address}</p>
-                <p className="mt-1 text-[11px] text-ink/40">La ubicación exacta y las indicaciones de llegada se comparten al confirmar la reserva.</p>
+                <p className="mt-1 text-[11px] text-ink/40">La dirección exacta de recogida se confirma por WhatsApp antes de tu visita.</p>
               </div>
             </div>
 
@@ -109,32 +113,42 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      <section id="condiciones" className="border-t border-ink/10 bg-cream-100 py-14">
+      <section id="envios" className="border-t border-ink/10 bg-cream-100 py-14 sm:py-20">
         <div className="container-site grid gap-8 lg:grid-cols-3">
           <div>
-            <p className="eyebrow">Antes de reservar</p>
-            <h2 className="mt-3 text-3xl uppercase">Condiciones claras</h2>
+            <p className="eyebrow">Envíos y pagos</p>
+            <h2 className="mt-3 text-3xl uppercase">Sin sorpresas</h2>
             <p className="mt-3 text-sm leading-6 text-ink/55">
-              Queremos que llegues sin sorpresas. Estas son las reglas generales; cada alojamiento puede tener condiciones adicionales.
+              Estas son las condiciones generales de compra. Si algo no está claro, escríbenos antes de pedir.
             </p>
           </div>
           <div className="rounded-2xl border border-ink/[0.08] bg-white p-6 lg:col-span-2">
-            <p className="whitespace-pre-line text-sm leading-7 text-ink/65">{settings.booking.terms}</p>
-            <div className="mt-5 grid gap-3 border-t border-ink/10 pt-5 sm:grid-cols-3">
+            <p className="whitespace-pre-line text-sm leading-7 text-ink/65">{store.terms}</p>
+            <div className="mt-5 grid gap-4 border-t border-ink/10 pt-5 sm:grid-cols-3">
               <div>
-                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Check-in</p>
-                <p className="mt-1 text-sm font-bold">{settings.booking.checkInTime}</p>
+                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Envío</p>
+                <p className="mt-1 text-sm font-bold">{formatCOP(store.shippingCost)}</p>
+                <p className="mt-0.5 text-[10px] text-ink/40">Gratis desde {formatCOP(store.freeShippingThreshold)}</p>
               </div>
               <div>
-                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Check-out</p>
-                <p className="mt-1 text-sm font-bold">{settings.booking.checkOutTime}</p>
+                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Recogida</p>
+                <p className="mt-1 text-sm font-bold">Sin costo</p>
+                <p className="mt-0.5 text-[10px] text-ink/40">{store.pickupSchedule}</p>
               </div>
               <div>
-                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Anticipo</p>
-                <p className="mt-1 text-sm font-bold">{settings.booking.depositPercent}% del total</p>
+                <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/35">Pago</p>
+                <p className="mt-1 text-sm font-bold">Contraentrega, Nequi o transferencia</p>
+                <p className="mt-0.5 text-[10px] text-ink/40">Confirmamos contigo antes de despachar</p>
               </div>
             </div>
-            <Link href="/reserva" className="link-arrow mt-5">Consultar mi reserva <Icon name="arrow" className="h-4 w-4" /></Link>
+            <div className="mt-5 flex flex-wrap gap-3 border-t border-ink/10 pt-5">
+              <Link href="/tienda" className="btn-lime btn-sm">
+                Ir a la tienda <Icon name="arrow" className="h-3.5 w-3.5" />
+              </Link>
+              <Link href="/pedido" className="btn-outline btn-sm">
+                <Icon name="package" className="h-3.5 w-3.5" /> Seguir mi pedido
+              </Link>
+            </div>
           </div>
         </div>
       </section>

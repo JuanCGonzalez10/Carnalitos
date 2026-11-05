@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import AdminLoginForm from "@/components/admin/AdminLoginForm";
-import Logo, { LogoMark } from "@/components/brand/Logo";
+import Logo from "@/components/brand/Logo";
 import Icon from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
@@ -18,23 +17,23 @@ export default function AdminLoginPage() {
       <section className="relative hidden overflow-hidden bg-jungle-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-25"
-          style={{ backgroundImage: "url('/images/hero-canon.jpg')" }}
+          style={{ backgroundImage: "url('/images/brand/page-hero.svg')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-jungle-950 via-jungle-950/70 to-jungle-950/40" />
         <div className="relative">
           <Logo light size="xl" />
           <p className="mt-10 max-w-md text-4xl uppercase leading-[0.95]">
-            El cañón no se administra solo.
+            La tienda de tus mascotas, bien administrada.
           </p>
           <p className="mt-5 max-w-sm text-sm leading-7 text-white/55">
-            Panel privado para gestionar glampings, reservas, pagos, fotografías y la operación diaria de Adrenalina Extrema Huila.
+            Panel privado para gestionar productos, precios, inventario, pedidos y estadísticas de Carnalitos.
           </p>
         </div>
         <div className="relative grid gap-3 sm:grid-cols-3">
           {[
-            { icon: "calendar" as const, label: "Reservas" },
-            { icon: "image" as const, label: "Fotos" },
-            { icon: "chart" as const, label: "Ingresos" },
+            { icon: "bag" as const, label: "Pedidos" },
+            { icon: "tag" as const, label: "Productos" },
+            { icon: "chart" as const, label: "Ventas" },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
               <Icon name={item.icon} className="h-5 w-5 text-lime-400" />

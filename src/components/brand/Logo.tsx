@@ -1,16 +1,28 @@
-/* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import Link from "next/link";
 
-export function LogoMark({ className = "h-12 w-12" }: { className?: string }) {
+const MARK_SRC = "/images/brand/logo-mark.png";
+
+export function LogoMark({
+  className = "h-11 w-11",
+  priority = false,
+}: {
+  className?: string;
+  priority?: boolean;
+}) {
   return (
-    <img
-      src="/icon.png"
-      alt="Adrenalina Extrema"
-      width={64}
-      height={64}
-      className={`object-contain ${className}`}
-      loading="eager"
-    />
+    <span
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-jungle-900/10 ${className}`}
+    >
+      <Image
+        src={MARK_SRC}
+        alt=""
+        fill
+        priority={priority}
+        sizes="96px"
+        className="scale-[1.12] object-contain"
+      />
+    </span>
   );
 }
 
@@ -27,34 +39,41 @@ export default function Logo({
   className?: string;
   imageClassName?: string;
 }) {
-  const sizeClasses = {
-    compact: "h-11 sm:h-12 max-h-[52px]",
-    normal: "h-14 sm:h-16 max-h-[64px]",
-    large: "h-20 sm:h-24 max-h-[96px]",
-    xl: "h-28 sm:h-32 max-h-[130px]",
+  const markSizes = {
+    compact: "h-10 w-10",
+    normal: "h-12 w-12",
+    large: "h-16 w-16",
+    xl: "h-20 w-20",
   };
-
-  const chosenSize = compact ? sizeClasses.compact : (sizeClasses[size] ?? sizeClasses.normal);
+  const titleSizes = {
+    compact: "text-[22px]",
+    normal: "text-[27px]",
+    large: "text-[34px]",
+    xl: "text-[44px]",
+  };
+  const chosenSize = compact ? "compact" : size;
 
   return (
     <Link
       href="/"
       className={`group inline-flex items-center gap-2.5 transition-all ${className}`}
-      aria-label="Adrenalina Extrema Huila — Inicio"
+      aria-label="Carnalitos — Inicio"
     >
-      <img
-        src="/logo-adrenalina.png"
-        alt="Adrenalina Extrema Huila"
-        width={1024}
-        height={642}
-        className={`${chosenSize} w-auto object-contain transition-transform duration-300 group-hover:scale-105 ${
-          light ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]" : "drop-shadow-sm"
-        } ${imageClassName}`}
-        style={{ aspectRatio: "1024 / 642", minWidth: "80px" }}
-        loading="eager"
-      />
+      <span className={`${markSizes[chosenSize]} ${imageClassName} transition-transform duration-300 group-hover:-rotate-6`}>
+        <LogoMark className="h-full w-full" priority={chosenSize === "compact"} />
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className={`brand-wordmark ${titleSizes[chosenSize]}`}>CARNALITOS</span>
+        {!compact && (
+          <span
+            className={`mt-1.5 text-[10px] font-bold leading-none ${
+              light ? "text-white/65" : "text-ink/55"
+            }`}
+          >
+            Si a ti te gusta, a él también
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
-
-

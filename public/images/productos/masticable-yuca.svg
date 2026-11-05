@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Masticable de yuca natural">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9dcc0"/>
+      <stop offset="1" stop-color="#c8a86f"/>
+    </linearGradient>
+    <linearGradient id="stick" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff6dd"/>
+      <stop offset="1" stop-color="#d8bc85"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="400" cy="380" r="290" fill="#fffaf0" opacity="0.55"/>
+  <ellipse cx="400" cy="650" rx="260" ry="40" fill="#7a5a2b" opacity="0.22"/>
+  <g transform="translate(400 430)">
+    <g transform="rotate(-22)">
+      <rect x="-210" y="-46" width="420" height="92" rx="46" fill="url(#stick)"/>
+      <path d="M-150 -20h300M-150 14h300" stroke="#c4a366" stroke-width="5" opacity="0.5"/>
+    </g>
+    <g transform="rotate(18) translate(0 90)">
+      <rect x="-180" y="-40" width="360" height="80" rx="40" fill="#f2e2b9"/>
+      <path d="M-120 -16h240M-120 12h240" stroke="#c4a366" stroke-width="4" opacity="0.5"/>
+    </g>
+    <g transform="rotate(-4) translate(20 -110)">
+      <rect x="-150" y="-34" width="300" height="68" rx="34" fill="#fbeccb"/>
+    </g>
+    <g fill="#b08e4f" opacity="0.6">
+      <circle cx="-230" cy="-30" r="6"/>
+      <circle cx="220" cy="30" r="6"/>
+      <circle cx="-180" cy="120" r="5"/>
+    </g>
+  </g>
+  <g fill="#f5713f" opacity="0.65">
+    <path d="M140 220c22-20 54-16 70 4-26 14-50 14-70-4Z"/>
+    <path d="M660 240c-22-20-54-16-70 4 26 14 50 14 70-4Z"/>
+  </g>
+</svg>

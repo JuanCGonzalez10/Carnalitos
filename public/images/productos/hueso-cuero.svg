@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Hueso de cuero natural">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1b12"/>
+      <stop offset="1" stop-color="#5c3a20"/>
+    </linearGradient>
+    <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9a465"/>
+      <stop offset="1" stop-color="#a06a35"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="170" cy="170" r="150" fill="#f5713f" opacity="0.22"/>
+  <circle cx="650" cy="650" r="180" fill="#d9a465" opacity="0.12"/>
+  <ellipse cx="400" cy="630" rx="240" ry="36" fill="#000" opacity="0.3"/>
+  <g transform="translate(400 400) rotate(-14)">
+    <path d="M-250 -60c-50-40-120-20-130 40-10 60 60 100 110 60h500c50 40 120 20 130-40 10-60-60-100-110-60Z" fill="url(#leather)"/>
+    <path d="M-230 -40h460M-230 -10h460M-230 20h460M-230 50h460" stroke="#7a4a1e" stroke-width="5" opacity="0.5"/>
+    <g fill="#7a4a1e" opacity="0.55">
+      <circle cx="-190" cy="-30" r="6"/>
+      <circle cx="-120" cy="20" r="5"/>
+      <circle cx="-40" cy="-20" r="6"/>
+      <circle cx="50" cy="26" r="5"/>
+      <circle cx="140" cy="-16" r="6"/>
+      <circle cx="210" cy="30" r="5"/>
+    </g>
+  </g>
+  <g fill="#f5c26b" opacity="0.7">
+    <circle cx="160" cy="620" r="7"/>
+    <circle cx="650" cy="210" r="8"/>
+  </g>
+  <g stroke="#c98f5a" stroke-width="4" fill="none" opacity="0.4">
+    <path d="M110 350c40 40 40 100 0 140"/>
+    <path d="M690 350c-40 40-40 100 0 140"/>
+  </g>
+</svg>

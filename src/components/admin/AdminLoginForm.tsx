@@ -47,7 +47,7 @@ export default function AdminLoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className="admin-input"
-          placeholder="admin@adrenalinaextrema.co"
+          placeholder="admin@carnalitos.co"
         />
       </div>
       <div className="mt-4">

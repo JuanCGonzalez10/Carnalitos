@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Snack de atún para gatos">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#20334a"/>
+      <stop offset="1" stop-color="#3b5f7a"/>
+    </linearGradient>
+    <linearGradient id="can" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8edf2"/>
+      <stop offset="1" stop-color="#aebdca"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="640" cy="180" r="150" fill="#f5c26b" opacity="0.2"/>
+  <ellipse cx="400" cy="640" rx="250" ry="40" fill="#000" opacity="0.3"/>
+  <ellipse cx="400" cy="540" rx="230" ry="94" fill="#eef2f5"/>
+  <g transform="translate(400 470)">
+    <ellipse cx="0" cy="0" rx="170" ry="60" fill="url(#can)"/>
+    <path d="M-170 0v70c0 33 76 60 170 60s170-27 170-60V0" fill="url(#can)"/>
+    <ellipse cx="0" cy="0" rx="140" ry="46" fill="#cdd8e2"/>
+    <ellipse cx="0" cy="0" rx="118" ry="36" fill="#f7a27a"/>
+    <path d="M-60 -6c20-18 50-18 70 0-22 12-46 12-70 0Z" fill="#ffd0b0"/>
+    <circle cx="42" cy="8" r="10" fill="#e4614a"/>
+    <path d="M-140 80c40 24 86 36 140 36s100-12 140-36" stroke="#8fa1b2" stroke-width="6" fill="none" opacity="0.6"/>
+  </g>
+  <g transform="translate(560 300) rotate(12)" fill="#f7a27a">
+    <ellipse cx="0" cy="0" rx="70" ry="38"/>
+    <path d="M58 0 L110 -28 L110 28 Z"/>
+    <circle cx="-34" cy="-10" r="5" fill="#20334a"/>
+  </g>
+  <g fill="#9fe0d7" opacity="0.5">
+    <circle cx="150" cy="620" r="8"/>
+    <circle cx="190" cy="660" r="5"/>
+    <circle cx="660" cy="600" r="7"/>
+  </g>
+</svg>

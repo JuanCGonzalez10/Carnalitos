@@ -1,6 +1,7 @@
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import WhatsAppButton from "@/components/shared/WhatsAppButton";
+import { CartProvider } from "@/components/store/CartProvider";
 import { buildWhatsAppUrl, DEFAULT_SETTINGS, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -14,15 +15,17 @@ export default async function PublicLayout({ children }: { children: React.React
   }
   const whatsapp = buildWhatsAppUrl(
     settings.business.whatsapp,
-    "Hola, quiero información sobre Adrenalina Extrema Huila.",
+    "Hola Carnalitos, quiero información sobre sus snacks para mascotas.",
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-cream">
-      <Navbar business={settings.business} whatsappUrl={whatsapp} />
-      <main className="flex-1">{children}</main>
-      <Footer business={settings.business} />
-      <WhatsAppButton url={whatsapp} />
-    </div>
+    <CartProvider>
+      <div className="flex min-h-screen flex-col bg-cream">
+        <Navbar business={settings.business} store={settings.store} whatsappUrl={whatsapp} />
+        <main className="flex-1">{children}</main>
+        <Footer business={settings.business} store={settings.store} />
+        <WhatsAppButton url={whatsapp} />
+      </div>
+    </CartProvider>
   );
 }

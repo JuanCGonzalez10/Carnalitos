@@ -1,37 +1,35 @@
 import { query, queryOne } from "@/lib/db";
-import type { BusinessSettings, BookingSettings, IntegrationSettings, Settings } from "@/types";
+import type { BusinessSettings, Settings, StoreSettings } from "@/types";
 
 export const DEFAULT_SETTINGS: Settings = {
   business: {
-    name: "Adrenalina Extrema Huila",
-    tagline: "Aventura y glamping en el Cañón del Magdalena",
+    name: "Carnalitos",
+    tagline: "Snacks y comida saludable para mascotas",
     description:
-      "Un refugio de aventura en el sur del Huila. Glamping entre montañas, río y bosque, con experiencias diseñadas para reconectar con lo salvaje.",
-    phone: "+57 300 000 0000",
-    whatsapp: "+573000000000",
-    email: "reservas@adrenalinaextrema.co",
-    address: "Cañón del Magdalena, Huila, Colombia",
-    mapQuery: "Cañón del Magdalena, Huila, Colombia",
-    instagram: "https://instagram.com/adextremahuila/",
-    facebook: "https://facebook.com/",
+      "Carnalitos es una tienda colombiana de snacks naturales, comida saludable y premios para perros y gatos. Hacemos productos con ingredientes reales, sin conservantes ni colorantes artificiales.",
+    phone: process.env.NEXT_PUBLIC_WHATSAPP || "+57 310 833 8636",
+    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP || "+573108338636",
+    email: process.env.ADMIN_EMAIL || "carnalitosbarf@gmail.com",
+    address: "Medellín, Colombia",
+    city: "Medellín",
+    mapQuery: "Medellín, Colombia",
+    instagram: "https://www.instagram.com/carnalitos.co/",
+    facebook: "",
     tiktok: "",
-    schedule: "Todos los días · 7:00 a. m. a 8:00 p. m.",
-    provisional: true,
+    schedule: "Lunes a sábado · 8:00 a. m. a 6:00 p. m.",
+    provisional: false,
   },
-  booking: {
+  store: {
     currency: "COP",
-    depositPercent: 30,
-    minNights: 1,
-    checkInTime: "3:00 p. m.",
-    checkOutTime: "12:00 m.",
-    maxGuests: 12,
+    shippingCost: 12000,
+    freeShippingThreshold: 120000,
+    pickupAddress: "Medellín · entrega coordinada por WhatsApp",
+    pickupSchedule: "Lunes a sábado, 9:00 a. m. a 5:00 p. m.",
+    deliveryNote:
+      "Entregas exclusivas en Medellín en 24 a 48 horas.",
     terms:
-      "La reserva se confirma con el pago del anticipo. Las tarifas pueden variar en temporada alta. La cancelación con reembolso aplica hasta 7 días antes de la llegada; después se abona a una nueva fecha según disponibilidad.",
-  },
-  integrations: {
-    payments: { provider: "wompi", enabled: false, publicKeyConfigured: false },
-    electronicInvoice: { provider: "factus", enabled: false, dianValidated: false },
-    email: { provider: "smtp", enabled: false },
+      "Los pedidos se confirman por WhatsApp o correo. El pago contraentrega está disponible en Medellín. Los productos son elaborados de forma artesanal; las imágenes son de referencia.",
+    lowStockThreshold: 5,
   },
 };
 
@@ -39,7 +37,13 @@ function merge<T extends Record<string, unknown>>(base: T, override: unknown): T
   if (!override || typeof override !== "object") return base;
   const result = { ...base } as Record<string, unknown>;
   for (const [key, value] of Object.entries(override as Record<string, unknown>)) {
-    if (value && typeof value === "object" && !Array.isArray(value) && base[key] && typeof base[key] === "object") {
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      base[key] &&
+      typeof base[key] === "object"
+    ) {
       result[key] = merge(base[key] as Record<string, unknown>, value);
     } else if (value !== undefined && value !== null) {
       result[key] = value;
@@ -48,37 +52,72 @@ function merge<T extends Record<string, unknown>>(base: T, override: unknown): T
   return result as T;
 }
 
-export function integrationStatus(): IntegrationSettings {
-  const paymentsConfigured = Boolean(process.env.WOMPI_PUBLIC_KEY && process.env.WOMPI_PRIVATE_KEY);
-  const invoiceConfigured = Boolean(process.env.FACTUS_CLIENT_ID && process.env.FACTUS_CLIENT_SECRET);
-  const emailConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
-  return {
-    payments: {
-      provider: "wompi",
-      enabled: paymentsConfigured,
-      publicKeyConfigured: Boolean(process.env.WOMPI_PUBLIC_KEY),
-    },
-    electronicInvoice: {
-      provider: "factus",
-      enabled: invoiceConfigured,
-      // La app no valida facturas ante la DIAN. Un proveedor autorizado lo hace.
-      dianValidated: false,
-    },
-    email: { provider: "smtp", enabled: emailConfigured },
-  };
-}
-
 export async function getSettings(): Promise<Settings> {
-  const rows = await query<{ key: string; value: Record<string, unknown> }>("select key, value from settings");
-  const stored = Object.fromEntries(rows.map((row) => [row.key, row.value]));
-  const envIntegrations = integrationStatus();
+  let stored: Record<string, Record<string, unknown>> = {};
+  try {
+    const rows = await query<{ key: string; value: Record<string, unknown> }>(
+      "select key, value from settings",
+    );
+    stored = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  } catch {
+    // Si la base de datos no está disponible, se usan los valores por defecto
+  }
+
+  const business = merge(
+    DEFAULT_SETTINGS.business as unknown as Record<string, unknown>,
+    stored.business,
+  ) as unknown as BusinessSettings;
+
+  // Si la BD contiene datos provisionales o si se configuran variables de entorno:
+  const envWhatsapp = process.env.NEXT_PUBLIC_WHATSAPP;
+  if (
+    envWhatsapp ||
+    !business.whatsapp ||
+    business.whatsapp.includes("3000000000") ||
+    business.whatsapp.includes("300 000")
+  ) {
+    const target = envWhatsapp || "+573108338636";
+    business.whatsapp = target;
+    if (!business.phone || business.phone.includes("3000000000") || business.phone.includes("300 000")) {
+      business.phone = "+57 310 833 8636";
+    }
+  }
+
+  const envEmail = process.env.ADMIN_EMAIL;
+  if (envEmail || !business.email || business.email === "hola@carnalitos.co") {
+    business.email = envEmail || "carnalitosbarf@gmail.com";
+  }
+
+  const store = merge(
+    DEFAULT_SETTINGS.store as unknown as Record<string, unknown>,
+    stored.store,
+  ) as unknown as StoreSettings;
+
+  // Sanitización obligatoria: eliminar cualquier rezago de "Bogotá" o "envíos nacionales"
+  if (typeof store.terms === "string") {
+    store.terms = store.terms.replace(/bogot[aá]/gi, "Medellín");
+  }
+  if (typeof store.pickupAddress === "string") {
+    store.pickupAddress = store.pickupAddress.replace(/bogot[aá]/gi, "Medellín");
+  }
+  if (typeof store.deliveryNote === "string") {
+    store.deliveryNote = store.deliveryNote
+      .replace(/bogot[aá]/gi, "Medellín")
+      .replace(/y envíos nacionales en \d a \d días hábiles\.?/gi, "");
+  }
+  if (typeof business.address === "string") {
+    business.address = business.address.replace(/bogot[aá]/gi, "Medellín");
+  }
+  if (typeof business.city === "string") {
+    business.city = business.city.replace(/bogot[aá]/gi, "Medellín");
+  }
+  if (typeof business.mapQuery === "string") {
+    business.mapQuery = business.mapQuery.replace(/bogot[aá]/gi, "Medellín");
+  }
+
   return {
-    business: merge(DEFAULT_SETTINGS.business as unknown as Record<string, unknown>, stored.business) as unknown as BusinessSettings,
-    booking: merge(DEFAULT_SETTINGS.booking as unknown as Record<string, unknown>, stored.booking) as unknown as BookingSettings,
-    integrations: {
-      ...merge(DEFAULT_SETTINGS.integrations as unknown as Record<string, unknown>, stored.integrations),
-      ...envIntegrations,
-    } as IntegrationSettings,
+    business,
+    store,
   };
 }
 
@@ -87,7 +126,10 @@ export async function getSetting<T>(key: string): Promise<T | null> {
   return row?.value ?? null;
 }
 
-export async function updateSettingsSection(key: keyof Settings, value: Record<string, unknown>): Promise<void> {
+export async function updateSettingsSection(
+  key: keyof Settings,
+  value: Record<string, unknown>,
+): Promise<void> {
   await query(
     `insert into settings (key, value, updated_at) values ($1, $2::jsonb, now())
      on conflict (key) do update set value = settings.value || excluded.value, updated_at = now()`,
@@ -101,5 +143,8 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
 }
 
 export function formatWhatsAppDisplay(phone: string): string {
-  return phone.replace(/^\+?57/, "").replace(/\D/g, "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+  return phone
+    .replace(/^\+?57/, "")
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
 }

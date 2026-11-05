@@ -1,11 +1,18 @@
 import Link from "next/link";
 import Logo from "@/components/brand/Logo";
 import Icon from "@/components/ui/Icon";
-import type { BusinessSettings } from "@/types";
+import type { BusinessSettings, StoreSettings } from "@/types";
 import { buildWhatsAppUrl } from "@/lib/settings";
+import { formatCOP } from "@/lib/store/format";
 
-export default function Footer({ business }: { business: BusinessSettings }) {
-  const whatsapp = buildWhatsAppUrl(business.whatsapp, "Hola, quiero información sobre Adrenalina Extrema Huila.");
+export default function Footer({
+  business,
+  store,
+}: {
+  business: BusinessSettings;
+  store: StoreSettings;
+}) {
+  const whatsapp = buildWhatsAppUrl(business.whatsapp, "Hola Carnalitos, quiero información sobre sus productos.");
   const year = new Date().getFullYear();
 
   return (
@@ -40,21 +47,21 @@ export default function Footer({ business }: { business: BusinessSettings }) {
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-5 lg:pl-8">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-lime-400">Explora</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-lime-400">Tienda</p>
               <ul className="mt-5 space-y-3 text-sm text-white/60">
-                <li><Link href="/glampings" className="transition hover:text-white">Glampings</Link></li>
-                <li><Link href="/actividades" className="transition hover:text-white">Actividades</Link></li>
-                <li><Link href="/galeria" className="transition hover:text-white">Galería</Link></li>
-                <li><Link href="/reservar" className="transition hover:text-white">Reservar</Link></li>
+                <li><Link href="/tienda" className="transition hover:text-white">Todos los productos</Link></li>
+                <li><Link href="/tienda?category=snacks-naturales" className="transition hover:text-white">Snacks naturales</Link></li>
+                <li><Link href="/tienda?category=comida-saludable" className="transition hover:text-white">Comida saludable</Link></li>
+                <li><Link href="/tienda?category=gatos" className="transition hover:text-white">Para gatos</Link></li>
               </ul>
             </div>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-lime-400">Información</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-lime-400">Ayuda</p>
               <ul className="mt-5 space-y-3 text-sm text-white/60">
                 <li><Link href="/contacto" className="transition hover:text-white">Contacto</Link></li>
-                <li><Link href="/contacto#ubicacion" className="transition hover:text-white">Ubicación</Link></li>
-                <li><Link href="/contacto#condiciones" className="transition hover:text-white">Condiciones</Link></li>
-                <li><Link href="/reserva" className="transition hover:text-white">Mi reserva</Link></li>
+                <li><Link href="/pedido" className="transition hover:text-white">Seguir mi pedido</Link></li>
+                <li><Link href="/nosotros" className="transition hover:text-white">Nuestra historia</Link></li>
+                <li><Link href="/contacto#envios" className="transition hover:text-white">Envíos y entregas</Link></li>
               </ul>
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -69,10 +76,12 @@ export default function Footer({ business }: { business: BusinessSettings }) {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="font-display text-2xl uppercase text-white">Reserva directa</p>
-              <p className="mt-2 text-sm leading-6 text-white/55">Sin intermediarios. Consulta disponibilidad y asegura tu experiencia.</p>
-              <Link href="/reservar" className="btn-lime mt-5 w-full">Reservar ahora</Link>
+            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+              <p className="font-display text-2xl uppercase text-white">Compra directa</p>
+              <p className="mt-2 text-sm leading-6 text-white/55">
+                Envío gratis en compras desde {formatCOP(store.freeShippingThreshold)}. Pago contraentrega en Medellín.
+              </p>
+              <Link href="/tienda" className="btn-lime mt-5 w-full">Comprar ahora</Link>
               <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-white/60 transition hover:text-lime-400">
                 <Icon name="whatsapp" className="h-4 w-4" /> Escríbenos
               </a>

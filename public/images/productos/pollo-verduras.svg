@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Pollo con verduras para perros">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7e6c9"/>
+      <stop offset="1" stop-color="#e8bd86"/>
+    </linearGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d7a55"/>
+      <stop offset="1" stop-color="#0b2b1f"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="400" cy="360" r="280" fill="#fff6e8" opacity="0.7"/>
+  <ellipse cx="400" cy="650" rx="270" ry="42" fill="#8a5a2b" opacity="0.22"/>
+  <g>
+    <ellipse cx="400" cy="470" rx="250" ry="70" fill="#d7a86a"/>
+    <path d="M150 470c0 110 112 190 250 190s250-80 250-190Z" fill="url(#bowl)"/>
+    <ellipse cx="400" cy="470" rx="250" ry="64" fill="#2a9469"/>
+    <ellipse cx="400" cy="470" rx="210" ry="48" fill="#f0c98e"/>
+    <g>
+      <ellipse cx="310" cy="450" rx="52" ry="34" fill="#f6d9a8"/>
+      <ellipse cx="360" cy="478" rx="46" ry="30" fill="#f0c98e"/>
+      <circle cx="470" cy="450" r="34" fill="#f5713f"/>
+      <circle cx="500" cy="482" r="24" fill="#f9a26f"/>
+      <path d="M250 480c20-26 54-26 74 0-24 16-50 16-74 0Z" fill="#4f9c4a"/>
+      <path d="M520 438c-16-24-48-26-66-4 20 18 44 20 66 4Z" fill="#7ac06a"/>
+      <circle cx="390" cy="430" r="20" fill="#f5c26b"/>
+      <circle cx="430" cy="500" r="16" fill="#e8b072"/>
+    </g>
+    <path d="M190 530c40 40 110 66 210 66s170-26 210-66" stroke="#0b2b1f" stroke-width="6" fill="none" opacity="0.25"/>
+  </g>
+  <g fill="#1d7a55" opacity="0.65">
+    <path d="M150 220c-20-40 10-82 52-82-8 42-18 68-52 82Z"/>
+    <path d="M650 220c20-40-10-82-52-82 8 42 18 68 52 82Z"/>
+  </g>
+</svg>

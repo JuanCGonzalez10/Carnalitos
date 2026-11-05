@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { query, queryOne } from "@/lib/db";
 import type { AdminUser } from "@/types";
 
-export const SESSION_COOKIE = "aeh_admin_session";
+export const SESSION_COOKIE = "carnalitos_admin_session";
 const SESSION_DAYS = 7;
 
 function hashToken(token: string): string {
@@ -19,9 +19,14 @@ export async function createSession(userId: string): Promise<void> {
     [hashToken(token), userId, expiresAt],
   );
   const store = await cookies();
+  const headerStore = await headers();
+  const forwardedProto = headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const host = headerStore.get("host") ?? "";
+  const isLocalHost = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  const secure = forwardedProto ? forwardedProto === "https" : process.env.NODE_ENV === "production" && !isLocalHost;
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     expires: expiresAt,

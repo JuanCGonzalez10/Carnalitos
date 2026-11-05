@@ -1,36 +1,36 @@
 {
-  "name": "adrenalina-extrema-huila",
+  "name": "carnalitos",
   "version": "1.0.0",
   "private": true,
-  "description": "Sitio web y sistema de reservas de Adrenalina Extrema Huila: glamping, aventura y administración integral.",
+  "description": "Tienda en línea de snacks y comida saludable para mascotas, con panel administrativo de productos, pedidos y estadísticas.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "db:setup": "node scripts/setup-db.mjs",
     "db:seed": "node scripts/seed.mjs",
-    "db:reset": "node scripts/setup-db.mjs --reset"
+    "db:reset": "node scripts/setup-db.mjs --reset",
+    "test:notifications": "node scripts/test-notifications.mjs"
   },
   "keywords": [
     "nextjs",
     "react",
     "typescript",
     "postgresql",
-    "glamping",
-    "reservas",
-    "turismo",
-    "huila"
+    "mascotas",
+    "snacks",
+    "tienda",
+    "colombia"
   ],
-  "author": "Adrenalina Extrema Huila",
+  "author": "Carnalitos",
   "license": "MIT",
   "dependencies": {
+    "@types/nodemailer": "^8.0.2",
     "framer-motion": "^12.23.24",
     "next": "^16.2.11",
-    "pdfkit": "^0.17.2",
+    "nodemailer": "^10.3.1",
     "pg": "^8.16.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -38,21 +38,17 @@
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/pdfkit": "^0.17.3",
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-compiler": "1.0.0",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "^16.2.11",
-    "jsdom": "^29.1.1",
     "postcss": "^8.5.22",
     "tailwindcss": "^3.4.18",
-    "typescript": "^5",
-    "vitest": "^4.1.10"
+    "typescript": "^5"
   },
   "overrides": {
     "sharp": "^0.35.0",

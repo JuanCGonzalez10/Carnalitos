@@ -18,7 +18,7 @@ export default async function AdminSettingsPage() {
         <p className="eyebrow">Sistema</p>
         <h1 className="mt-2 text-3xl uppercase sm:text-4xl">Configuración</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink/50">
-          Edita la información pública del negocio, las reglas de reserva y revisa el estado de las integraciones externas.
+          Edita la información pública del negocio, las reglas de envío y las condiciones de compra de la tienda.
         </p>
       </div>
 

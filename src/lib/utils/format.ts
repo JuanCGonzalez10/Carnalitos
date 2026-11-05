@@ -18,6 +18,7 @@ export function formatDateTime(value: string | null | undefined): string {
   return new Intl.DateTimeFormat("es-CO", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "America/Bogota",
   }).format(date);
 }
 
@@ -25,29 +26,39 @@ export function formatShortDate(value: string | null | undefined): string {
   return formatDate(value, { day: "numeric", month: "short" });
 }
 
-export const BOOKING_STATUS_LABELS: Record<string, string> = {
+export const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: "Pendiente",
-  confirmed: "Confirmada",
-  checked_in: "En curso",
-  completed: "Completada",
-  cancelled: "Cancelada",
-  no_show: "No se presentó",
+  confirmed: "Confirmado",
+  preparing: "En preparación",
+  shipped: "Enviado",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   unpaid: "Sin pago",
-  deposit_paid: "Anticipo pagado",
-  paid: "Pagada",
-  refunded: "Reembolsada",
+  paid: "Pagado",
+  refunded: "Reembolsado",
 };
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: "Efectivo",
+  cash: "Efectivo contraentrega",
   nequi: "Nequi",
   bancolombia: "Bancolombia",
   card: "Tarjeta",
   transfer: "Transferencia",
   other: "Otro",
+};
+
+export const DELIVERY_METHOD_LABELS: Record<string, string> = {
+  delivery: "Domicilio",
+  pickup: "Recoger en tienda",
+};
+
+export const PET_TYPE_LABELS: Record<string, string> = {
+  perro: "Perros",
+  gato: "Gatos",
+  ambos: "Perros y gatos",
 };
 
 export function initials(name: string): string {
