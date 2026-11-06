@@ -3,8 +3,8 @@ import { ensureDatabase, applySchema, resetDatabase } from "./db-config.mjs";
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const reset = process.argv.includes("--reset");
-  if (reset) await resetDatabase();
   await ensureDatabase();
+  if (reset) await resetDatabase();
   await applySchema();
   const { seed } = await import("./seed.mjs");
   await seed();

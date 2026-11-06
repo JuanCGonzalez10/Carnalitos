@@ -1,4 +1,4 @@
-import { query, queryOne } from "@/lib/db";
+import { execute, query, queryOne } from "@/lib/db";
 import type { BusinessSettings, Settings, StoreSettings } from "@/types";
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -56,7 +56,7 @@ export async function getSettings(): Promise<Settings> {
   let stored: Record<string, Record<string, unknown>> = {};
   try {
     const rows = await query<{ key: string; value: Record<string, unknown> }>(
-      "select key, value from settings",
+      "select `key`, `value` from settings",
     );
     stored = Object.fromEntries(rows.map((row) => [row.key, row.value]));
   } catch {
@@ -122,18 +122,50 @@ export async function getSettings(): Promise<Settings> {
 }
 
 export async function getSetting<T>(key: string): Promise<T | null> {
-  const row = await queryOne<{ value: T }>("select value from settings where key = $1", [key]);
+  const row = await queryOne<{ value: T }>("select `value` from settings where `key` = ?", [key]);
   return row?.value ?? null;
+}
+
+/**
+ * Implementa la semántica de JSON Merge Patch (RFC 7386) en JavaScript.
+ * Así no dependemos de JSON_MERGE_PATCH ni de VALUES(), que cambian entre
+ * versiones de MySQL y MariaDB.
+ */
+function mergePatch(target: unknown, patch: unknown): unknown {
+  if (patch === null) return null;
+  if (Array.isArray(patch)) return patch;
+  if (typeof patch !== "object") return patch;
+
+  const base: Record<string, unknown> =
+    target && typeof target === "object" && !Array.isArray(target)
+      ? { ...(target as Record<string, unknown>) }
+      : {};
+
+  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
+    if (value === null) {
+      delete base[key];
+    } else {
+      base[key] = mergePatch(base[key], value);
+    }
+  }
+  return base;
 }
 
 export async function updateSettingsSection(
   key: keyof Settings,
   value: Record<string, unknown>,
 ): Promise<void> {
-  await query(
-    `insert into settings (key, value, updated_at) values ($1, $2::jsonb, now())
-     on conflict (key) do update set value = settings.value || excluded.value, updated_at = now()`,
-    [key, JSON.stringify(value)],
+  const current = await queryOne<{ value: Record<string, unknown> }>(
+    "select `value` from settings where `key` = ?",
+    [key],
+  );
+  const merged = mergePatch(current?.value ?? {}, value);
+  const serialized = JSON.stringify(merged);
+
+  await execute(
+    `insert into settings (\`key\`, \`value\`, updated_at) values (?, ?, now())
+     on duplicate key update \`value\` = ?, updated_at = now()`,
+    [key, serialized, serialized],
   );
 }
 

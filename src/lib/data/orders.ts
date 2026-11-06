@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { query, queryOne, withTransaction } from "@/lib/db";
 import { buildUpdateSet } from "@/lib/data/helpers";
 import { getSettings } from "@/lib/settings";
@@ -15,36 +15,40 @@ export class OrderError extends Error {
 
 const ORDER_FIELDS = `
   id, code,
-  customer_name as "customerName",
-  customer_email as "customerEmail",
-  customer_phone as "customerPhone",
-  delivery_method as "deliveryMethod",
+  customer_name as \`customerName\`,
+  customer_email as \`customerEmail\`,
+  customer_phone as \`customerPhone\`,
+  delivery_method as \`deliveryMethod\`,
   address, city, notes, subtotal, shipping, total, status,
-  payment_method as "paymentMethod",
-  payment_status as "paymentStatus",
-  admin_notes as "adminNotes",
-  created_at as "createdAt",
-  updated_at as "updatedAt"
+  payment_method as \`paymentMethod\`,
+  payment_status as \`paymentStatus\`,
+  admin_notes as \`adminNotes\`,
+  created_at as \`createdAt\`,
+  updated_at as \`updatedAt\`
 `;
 
 const ORDER_FIELDS_O = `
   o.id, o.code,
-  o.customer_name as "customerName",
-  o.customer_email as "customerEmail",
-  o.customer_phone as "customerPhone",
-  o.delivery_method as "deliveryMethod",
+  o.customer_name as \`customerName\`,
+  o.customer_email as \`customerEmail\`,
+  o.customer_phone as \`customerPhone\`,
+  o.delivery_method as \`deliveryMethod\`,
   o.address, o.city, o.notes, o.subtotal, o.shipping, o.total, o.status,
-  o.payment_method as "paymentMethod",
-  o.payment_status as "paymentStatus",
-  o.admin_notes as "adminNotes",
-  o.created_at as "createdAt",
-  o.updated_at as "updatedAt"
+  o.payment_method as \`paymentMethod\`,
+  o.payment_status as \`paymentStatus\`,
+  o.admin_notes as \`adminNotes\`,
+  o.created_at as \`createdAt\`,
+  o.updated_at as \`updatedAt\`
 `;
 
 const ITEM_FIELDS = `
-  id, order_id as "orderId", product_id as "productId",
-  product_name as "productName", unit_price as "unitPrice",
+  id, order_id as \`orderId\`, product_id as \`productId\`,
+  product_name as \`productName\`, unit_price as \`unitPrice\`,
   quantity, total, image
+`;
+
+const ITEMS_COUNT = `
+  (select coalesce(sum(oi.quantity), 0) from order_items oi where oi.order_id = o.id) as \`itemsCount\`
 `;
 
 function createCode(): string {
@@ -66,22 +70,26 @@ export interface CreateOrderInput {
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const settings = await getSettings();
   const store = settings.store;
+  let createdOrderId = "";
 
-  return withTransaction(async (client) => {
+  await withTransaction(async (connection) => {
     const ids = [...new Set(input.items.map((item) => item.productId))];
-    const productsResult = await client.query<{
-      id: string;
-      name: string;
-      price: number;
-      stock: number;
-      image: string;
-      active: boolean;
-    }>(
+    const placeholders = ids.map(() => "?").join(",");
+    const [productRows] = await connection.query(
       `select id, name, price, stock, image, active
-       from products where id = any($1::uuid[]) for update`,
-      [ids],
+       from products where id in (${placeholders}) for update`,
+      ids,
     );
-    const products = new Map(productsResult.rows.map((row) => [row.id, row]));
+    const products = new Map(
+      (productRows as Array<{
+        id: string;
+        name: string;
+        price: number;
+        stock: number;
+        image: string;
+        active: boolean;
+      }>).map((row) => [row.id, row]),
+    );
 
     const lines = input.items.map((item) => {
       const product = products.get(item.productId);
@@ -95,7 +103,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       return {
         product,
         quantity: item.quantity,
-        total: product.price * item.quantity,
+        total: Number(product.price) * item.quantity,
       };
     });
 
@@ -107,15 +115,16 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         : store.shippingCost;
     const total = subtotal + shipping;
     const code = createCode();
+    createdOrderId = randomUUID();
 
-    const orderRow = await client.query<Order>(
+    await connection.query(
       `insert into orders
-        (code, customer_name, customer_email, customer_phone, delivery_method,
+        (id, code, customer_name, customer_email, customer_phone, delivery_method,
          address, city, notes, subtotal, shipping, total, status,
          payment_method, payment_status)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12,'unpaid')
-       returning ${ORDER_FIELDS}`,
+       values (?,?,?,?,?,?,?,?,?,?,?,?,'pending',?,'unpaid')`,
       [
+        createdOrderId,
         code,
         input.customerName,
         input.customerEmail,
@@ -130,15 +139,15 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         input.paymentMethod,
       ],
     );
-    const order = orderRow.rows[0];
 
-    const items: OrderItem[] = [];
     for (const line of lines) {
-      const itemRow = await client.query<OrderItem>(
-        `insert into order_items (order_id, product_id, product_name, unit_price, quantity, total, image)
-         values ($1,$2,$3,$4,$5,$6,$7) returning ${ITEM_FIELDS}`,
+      await connection.query(
+        `insert into order_items
+          (id, order_id, product_id, product_name, unit_price, quantity, total, image)
+         values (?,?,?,?,?,?,?,?)`,
         [
-          order.id,
+          randomUUID(),
+          createdOrderId,
           line.product.id,
           line.product.name,
           line.product.price,
@@ -147,35 +156,34 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
           line.product.image,
         ],
       );
-      items.push(itemRow.rows[0]);
-      await client.query(
-        "update products set stock = stock - $1, updated_at = now() where id = $2",
+      await connection.query(
+        "update products set stock = stock - ?, updated_at = now() where id = ?",
         [line.quantity, line.product.id],
       );
     }
-
-    return { ...order, items };
   });
+
+  return (await getOrderById(createdOrderId))!;
 }
 
 export async function getOrderByCode(code: string): Promise<Order | null> {
   const order = await queryOne<Order>(
-    `select ${ORDER_FIELDS} from orders where upper(code) = upper($1)`,
+    `select ${ORDER_FIELDS} from orders where upper(code) = upper(?)`,
     [code.trim()],
   );
   if (!order) return null;
   const items = await query<OrderItem>(
-    `select ${ITEM_FIELDS} from order_items where order_id = $1 order by created_at asc`,
+    `select ${ITEM_FIELDS} from order_items where order_id = ? order by created_at asc`,
     [order.id],
   );
   return { ...order, items };
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
-  const order = await queryOne<Order>(`select ${ORDER_FIELDS} from orders where id = $1`, [id]);
+  const order = await queryOne<Order>(`select ${ORDER_FIELDS} from orders where id = ?`, [id]);
   if (!order) return null;
   const items = await query<OrderItem>(
-    `select ${ITEM_FIELDS} from order_items where order_id = $1 order by created_at asc`,
+    `select ${ITEM_FIELDS} from order_items where order_id = ? order by created_at asc`,
     [order.id],
   );
   return { ...order, items };
@@ -191,23 +199,23 @@ export async function listOrders(options: {
 
   if (options.status && options.status !== "all") {
     values.push(options.status);
-    where.push(`o.status = $${values.length}`);
+    where.push("o.status = ?");
   }
   if (options.search?.trim()) {
     values.push(`%${options.search.trim()}%`);
     where.push(
-      `(o.code ilike $${values.length} or o.customer_name ilike $${values.length} or o.customer_email ilike $${values.length} or o.customer_phone ilike $${values.length})`,
+      "(o.code like ? or o.customer_name like ? or o.customer_email like ? or o.customer_phone like ?)",
     );
+    const term = values[values.length - 1];
+    values.push(term, term, term);
   }
 
   const limit = options.limit ? `limit ${Math.max(1, Math.min(500, options.limit))}` : "";
 
   return query<Order>(
-    `select ${ORDER_FIELDS_O}, coalesce(sum(oi.quantity), 0)::int as "itemsCount"
+    `select ${ORDER_FIELDS_O}, ${ITEMS_COUNT}
      from orders o
-     left join order_items oi on oi.order_id = o.id
      ${where.length ? `where ${where.join(" and ")}` : ""}
-     group by o.id
      order by o.created_at desc
      ${limit}`,
     values,
@@ -228,26 +236,27 @@ export async function updateOrder(id: string, input: Record<string, unknown>): P
   const nextStatus = typeof input.status === "string" ? input.status : null;
   const restock = nextStatus === "cancelled" && current.status !== "cancelled";
 
-  return withTransaction(async (client) => {
+  await withTransaction(async (connection) => {
     if (restock && current.items?.length) {
       for (const item of current.items) {
         if (!item.productId) continue;
-        await client.query(
-          "update products set stock = stock + $1, updated_at = now() where id = $2",
+        await connection.query(
+          "update products set stock = stock + ?, updated_at = now() where id = ?",
           [item.quantity, item.productId],
         );
       }
     }
 
-    const { clause, values } = buildUpdateSet(input, ORDER_UPDATE_FIELDS, 1);
-    if (!clause) return current;
+    const { clause, values } = buildUpdateSet(input, ORDER_UPDATE_FIELDS);
+    if (!clause) return;
     values.push(id);
-    await client.query(
-      `update orders set ${clause}, updated_at = now() where id = $${values.length}`,
+    await connection.query(
+      `update orders set ${clause}, updated_at = now() where id = ?`,
       values,
     );
-    return null;
-  }).then(async () => getOrderById(id));
+  });
+
+  return getOrderById(id);
 }
 
 export async function listContactMessages(): Promise<
@@ -263,7 +272,7 @@ export async function listContactMessages(): Promise<
   }>
 > {
   return query(
-    `select id, name, email, phone, subject, message, status, created_at as "createdAt"
+    `select id, name, email, phone, subject, message, status, created_at as \`createdAt\`
      from contact_messages order by created_at desc`,
   );
 }
@@ -280,24 +289,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         averageTicket: number;
       }>(
         `select
-           coalesce(sum(total) filter (where payment_status = 'paid' and status <> 'cancelled'), 0) as revenue,
-           coalesce(sum(total) filter (where payment_status = 'unpaid' and status <> 'cancelled'), 0) as "pendingBalance",
-           count(*) filter (where date_trunc('month', created_at) = date_trunc('month', now()))::int as "ordersThisMonth",
-           count(*) filter (where status in ('pending', 'confirmed', 'preparing'))::int as "pendingOrders",
-           coalesce(avg(total) filter (where status <> 'cancelled'), 0) as "averageTicket"
+           coalesce(sum(case when payment_status = 'paid' and status <> 'cancelled' then total else 0 end), 0) as revenue,
+           coalesce(sum(case when payment_status = 'unpaid' and status <> 'cancelled' then total else 0 end), 0) as pendingBalance,
+           count(case when year(created_at) = year(now()) and month(created_at) = month(now()) then 1 end) as ordersThisMonth,
+           count(case when status in ('pending', 'confirmed', 'preparing') then 1 end) as pendingOrders,
+           coalesce(avg(case when status <> 'cancelled' then total end), 0) as averageTicket
          from orders`,
       ),
       query<{ month: string; total: number }>(
-        `select to_char(date_trunc('month', created_at), 'YYYY-MM') as month, sum(total) as total
+        `select date_format(created_at, '%Y-%m') as month, sum(total) as total
          from orders
-         where status <> 'cancelled' and created_at >= date_trunc('month', now()) - interval '5 months'
-         group by 1 order by 1`,
+         where status <> 'cancelled'
+           and created_at >= date_sub(date_format(now(), '%Y-%m-01'), interval 5 month)
+         group by month order by month`,
       ),
       query<{ status: string; n: number }>(
-        "select status, count(*)::int as n from orders group by status",
+        "select status, count(*) as n from orders group by status",
       ),
       query<{ name: string; quantity: number; total: number }>(
-        `select oi.product_name as name, sum(oi.quantity)::int as quantity, sum(oi.total) as total
+        `select oi.product_name as name, sum(oi.quantity) as quantity, sum(oi.total) as total
          from order_items oi
          join orders o on o.id = oi.order_id
          where o.status <> 'cancelled'
@@ -312,27 +322,27 @@ export async function getDashboardStats(): Promise<DashboardStats> {
          left join products p on p.id = oi.product_id
          left join categories c on c.id = p.category_id
          where o.status <> 'cancelled'
-         group by c.name
+         group by coalesce(c.name, 'Sin categoría')
          order by total desc
          limit 6`,
       ),
       listOrders({ limit: 8 }),
-      queryOne<{ n: number }>("select count(*)::int as n from products where active = true"),
+      queryOne<{ n: number }>("select count(*) as n from products where active = 1"),
       queryOne<{ n: number }>(
-        "select count(*)::int as n from products where active = true and stock <= $1",
+        "select count(*) as n from products where active = 1 and stock <= ?",
         [settings.store.lowStockThreshold],
       ),
-      queryOne<{ n: number }>("select count(distinct lower(customer_email))::int as n from orders"),
+      queryOne<{ n: number }>("select count(distinct lower(customer_email)) as n from orders"),
     ]);
 
   const lowStockProducts = await query<Product>(
-    `select p.id, p.slug, p.name, p.category_id as "categoryId", p.short_description as "shortDescription",
-       p.description, p.price, p.compare_at_price as "compareAtPrice", p.stock, p.sku, p.unit, p.weight,
-       p.pet_type as "petType", p.benefits, p.ingredients, p.image, p.active, p.featured,
-       p.sort_order as "sortOrder", p.created_at as "createdAt",
-       c.name as "categoryName", c.slug as "categorySlug"
+    `select p.id, p.slug, p.name, p.category_id as \`categoryId\`, p.short_description as \`shortDescription\`,
+       p.description, p.price, p.compare_at_price as \`compareAtPrice\`, p.stock, p.sku, p.unit, p.weight,
+       p.pet_type as \`petType\`, p.benefits, p.ingredients, p.image, p.active, p.featured,
+       p.sort_order as \`sortOrder\`, p.created_at as \`createdAt\`,
+       c.name as \`categoryName\`, c.slug as \`categorySlug\`
      from products p left join categories c on c.id = p.category_id
-     where p.active = true and p.stock <= $1
+     where p.active = 1 and p.stock <= ?
      order by p.stock asc, p.name asc
      limit 5`,
     [settings.store.lowStockThreshold],
@@ -367,39 +377,38 @@ export interface ReportData {
   categorySales: Array<{ name: string; total: number }>;
 }
 
+const DATE_RANGE = "o.created_at >= ? and o.created_at < date_add(?, interval 1 day)";
+
 export async function getReport(from: string, to: string): Promise<ReportData> {
   const range = [from, to];
   const [orders, totals, topProducts, categorySales] = await Promise.all([
     query<Order>(
-      `select ${ORDER_FIELDS_O}, coalesce(sum(oi.quantity), 0)::int as "itemsCount"
+      `select ${ORDER_FIELDS_O}, ${ITEMS_COUNT}
        from orders o
-       left join order_items oi on oi.order_id = o.id
-       where o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')
-       group by o.id
+       where ${DATE_RANGE}
        order by o.created_at desc`,
       range,
     ),
     queryOne<{ totalOrders: number; units: number; revenue: number; pending: number }>(
       `select
-         (select count(*)::int from orders o
-          where o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')) as "totalOrders",
-         coalesce((select sum(oi.quantity)::int from order_items oi
+         (select count(*) from orders o
+          where ${DATE_RANGE}) as totalOrders,
+         coalesce((select sum(oi.quantity) from order_items oi
           join orders o on o.id = oi.order_id
-          where o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')), 0) as units,
+          where ${DATE_RANGE}), 0) as units,
          coalesce((select sum(o.total) from orders o
           where o.payment_status = 'paid' and o.status <> 'cancelled'
-            and o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')), 0) as revenue,
+            and ${DATE_RANGE}), 0) as revenue,
          coalesce((select sum(o.total) from orders o
           where o.payment_status = 'unpaid' and o.status <> 'cancelled'
-            and o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')), 0) as pending`,
-      range,
+            and ${DATE_RANGE}), 0) as pending`,
+      [...range, ...range, ...range, ...range],
     ),
     query<{ name: string; quantity: number; total: number }>(
-      `select oi.product_name as name, sum(oi.quantity)::int as quantity, sum(oi.total) as total
+      `select oi.product_name as name, sum(oi.quantity) as quantity, sum(oi.total) as total
        from order_items oi
        join orders o on o.id = oi.order_id
-       where o.status <> 'cancelled'
-         and o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')
+       where o.status <> 'cancelled' and ${DATE_RANGE}
        group by oi.product_name
        order by total desc
        limit 8`,
@@ -411,9 +420,8 @@ export async function getReport(from: string, to: string): Promise<ReportData> {
        join orders o on o.id = oi.order_id
        left join products p on p.id = oi.product_id
        left join categories c on c.id = p.category_id
-       where o.status <> 'cancelled'
-         and o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')
-       group by c.name
+       where o.status <> 'cancelled' and ${DATE_RANGE}
+       group by coalesce(c.name, 'Sin categoría')
        order by total desc`,
       range,
     ),
@@ -436,11 +444,9 @@ export async function getReport(from: string, to: string): Promise<ReportData> {
 
 export async function getOrdersForRange(from: string, to: string): Promise<Order[]> {
   return query<Order>(
-    `select ${ORDER_FIELDS_O}, coalesce(sum(oi.quantity), 0)::int as "itemsCount"
+    `select ${ORDER_FIELDS_O}, ${ITEMS_COUNT}
      from orders o
-     left join order_items oi on oi.order_id = o.id
-     where o.created_at >= $1::date and o.created_at < ($2::date + interval '1 day')
-     group by o.id
+     where ${DATE_RANGE}
      order by o.created_at desc`,
     [from, to],
   );

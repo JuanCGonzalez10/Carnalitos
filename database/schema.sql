@@ -1,138 +1,170 @@
 -- ============================================================
--- Carnalitos — esquema PostgreSQL
+-- Carnalitos — esquema MySQL / MariaDB
 -- Tienda en línea de snacks y comida saludable para mascotas
+--
 -- Ejecutar con: npm run db:setup
+-- O importar este archivo desde phpMyAdmin (Hostinger).
 -- ============================================================
 
-create extension if not exists "pgcrypto";
+SET NAMES utf8mb4;
 
 -- ---------- Administración y sesiones ----------
-create table if not exists admin_users (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  email text not null unique,
-  password_hash text not null,
-  role text not null default 'admin' check (role in ('admin', 'editor')),
-  active boolean not null default true,
-  last_login_at timestamptz,
-  created_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS admin_users (
+  id CHAR(36) NOT NULL,
+  name VARCHAR(191) NOT NULL,
+  email VARCHAR(191) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin', 'editor') NOT NULL DEFAULT 'admin',
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  last_login_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY admin_users_email_uq (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-create table if not exists admin_sessions (
-  id uuid primary key default gen_random_uuid(),
-  token_hash text not null unique,
-  user_id uuid not null references admin_users(id) on delete cascade,
-  expires_at timestamptz not null,
-  created_at timestamptz not null default now()
-);
-create index if not exists admin_sessions_user_idx on admin_sessions(user_id);
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id CHAR(36) NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  user_id CHAR(36) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY admin_sessions_token_uq (token_hash),
+  KEY admin_sessions_user_idx (user_id),
+  CONSTRAINT admin_sessions_user_fk
+    FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------- Configuración editable ----------
-create table if not exists settings (
-  key text primary key,
-  value jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS settings (
+  `key` VARCHAR(64) NOT NULL,
+  `value` JSON NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------- Catálogo ----------
-create table if not exists categories (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  name text not null,
-  description text not null default '',
-  icon text not null default 'paw',
-  image text not null default '',
-  sort_order integer not null default 0,
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index if not exists categories_active_idx on categories(active, sort_order);
+CREATE TABLE IF NOT EXISTS categories (
+  id CHAR(36) NOT NULL,
+  slug VARCHAR(191) NOT NULL,
+  name VARCHAR(191) NOT NULL,
+  description TEXT NOT NULL,
+  icon VARCHAR(64) NOT NULL DEFAULT 'paw',
+  image VARCHAR(500) NOT NULL DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY categories_slug_uq (slug),
+  KEY categories_active_idx (active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-create table if not exists products (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  name text not null,
-  category_id uuid references categories(id) on delete set null,
-  short_description text not null default '',
-  description text not null default '',
-  price numeric(12, 2) not null check (price >= 0),
-  compare_at_price numeric(12, 2) check (compare_at_price is null or compare_at_price >= 0),
-  stock integer not null default 0 check (stock >= 0),
-  sku text not null default '',
-  unit text not null default 'unidad',
-  weight text not null default '',
-  pet_type text not null default 'ambos' check (pet_type in ('perro', 'gato', 'ambos')),
-  benefits text[] not null default '{}',
-  ingredients text not null default '',
-  image text not null default '',
-  active boolean not null default true,
-  featured boolean not null default false,
-  sort_order integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index if not exists products_active_idx on products(active, sort_order);
-create index if not exists products_category_idx on products(category_id, active);
-create index if not exists products_stock_idx on products(stock);
+CREATE TABLE IF NOT EXISTS products (
+  id CHAR(36) NOT NULL,
+  slug VARCHAR(191) NOT NULL,
+  name VARCHAR(191) NOT NULL,
+  category_id CHAR(36) NULL,
+  short_description TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price DECIMAL(12, 2) NOT NULL,
+  compare_at_price DECIMAL(12, 2) NULL,
+  stock INT NOT NULL DEFAULT 0,
+  sku VARCHAR(100) NOT NULL DEFAULT '',
+  unit VARCHAR(64) NOT NULL DEFAULT 'unidad',
+  weight VARCHAR(64) NOT NULL DEFAULT '',
+  pet_type ENUM('perro', 'gato', 'ambos') NOT NULL DEFAULT 'ambos',
+  benefits JSON NOT NULL,
+  ingredients TEXT NOT NULL,
+  image VARCHAR(500) NOT NULL DEFAULT '',
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  featured TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY products_slug_uq (slug),
+  KEY products_active_idx (active, sort_order),
+  KEY products_category_idx (category_id, active),
+  KEY products_stock_idx (stock),
+  CONSTRAINT products_category_fk
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+  CONSTRAINT products_price_ck CHECK (price >= 0),
+  CONSTRAINT products_compare_price_ck CHECK (compare_at_price IS NULL OR compare_at_price >= 0),
+  CONSTRAINT products_stock_ck CHECK (stock >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------- Pedidos ----------
-create table if not exists orders (
-  id uuid primary key default gen_random_uuid(),
-  code text not null unique,
-  customer_name text not null,
-  customer_email text not null,
-  customer_phone text not null,
-  delivery_method text not null default 'delivery' check (delivery_method in ('delivery', 'pickup')),
-  address text not null default '',
-  city text not null default '',
-  notes text not null default '',
-  subtotal numeric(12, 2) not null default 0 check (subtotal >= 0),
-  shipping numeric(12, 2) not null default 0 check (shipping >= 0),
-  total numeric(12, 2) not null default 0 check (total >= 0),
-  status text not null default 'pending'
-    check (status in ('pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled')),
-  payment_method text not null default 'cash'
-    check (payment_method in ('cash', 'nequi', 'bancolombia', 'card', 'transfer', 'other')),
-  payment_status text not null default 'unpaid'
-    check (payment_status in ('unpaid', 'paid', 'refunded')),
-  admin_notes text not null default '',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index if not exists orders_status_idx on orders(status, created_at desc);
-create index if not exists orders_created_idx on orders(created_at desc);
-create index if not exists orders_email_idx on orders(lower(customer_email));
-create index if not exists orders_payment_idx on orders(payment_status);
+CREATE TABLE IF NOT EXISTS orders (
+  id CHAR(36) NOT NULL,
+  code VARCHAR(32) NOT NULL,
+  customer_name VARCHAR(191) NOT NULL,
+  customer_email VARCHAR(191) NOT NULL,
+  customer_phone VARCHAR(64) NOT NULL,
+  delivery_method ENUM('delivery', 'pickup') NOT NULL DEFAULT 'delivery',
+  address TEXT NOT NULL,
+  city VARCHAR(120) NOT NULL,
+  notes TEXT NOT NULL,
+  subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  shipping DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  total DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  status ENUM('pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled')
+    NOT NULL DEFAULT 'pending',
+  payment_method ENUM('cash', 'nequi', 'bancolombia', 'card', 'transfer', 'other')
+    NOT NULL DEFAULT 'cash',
+  payment_status ENUM('unpaid', 'paid', 'refunded') NOT NULL DEFAULT 'unpaid',
+  admin_notes VARCHAR(2000) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY orders_code_uq (code),
+  KEY orders_status_idx (status, created_at),
+  KEY orders_created_idx (created_at),
+  KEY orders_email_idx (customer_email),
+  KEY orders_payment_idx (payment_status),
+  CONSTRAINT orders_subtotal_ck CHECK (subtotal >= 0),
+  CONSTRAINT orders_shipping_ck CHECK (shipping >= 0),
+  CONSTRAINT orders_total_ck CHECK (total >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-create table if not exists order_items (
-  id uuid primary key default gen_random_uuid(),
-  order_id uuid not null references orders(id) on delete cascade,
-  product_id uuid references products(id) on delete set null,
-  product_name text not null,
-  unit_price numeric(12, 2) not null check (unit_price >= 0),
-  quantity integer not null default 1 check (quantity > 0),
-  total numeric(12, 2) not null check (total >= 0),
-  image text not null default '',
-  created_at timestamptz not null default now()
-);
-create index if not exists order_items_order_idx on order_items(order_id);
-create index if not exists order_items_product_idx on order_items(product_id);
+CREATE TABLE IF NOT EXISTS order_items (
+  id CHAR(36) NOT NULL,
+  order_id CHAR(36) NOT NULL,
+  product_id CHAR(36) NULL,
+  product_name VARCHAR(191) NOT NULL,
+  unit_price DECIMAL(12, 2) NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  total DECIMAL(12, 2) NOT NULL,
+  image VARCHAR(500) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY order_items_order_idx (order_id),
+  KEY order_items_product_idx (product_id),
+  CONSTRAINT order_items_order_fk
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  CONSTRAINT order_items_product_fk
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+  CONSTRAINT order_items_price_ck CHECK (unit_price >= 0),
+  CONSTRAINT order_items_quantity_ck CHECK (quantity > 0),
+  CONSTRAINT order_items_total_ck CHECK (total >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------- Mensajes de contacto ----------
-create table if not exists contact_messages (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  email text not null,
-  phone text not null default '',
-  subject text not null default '',
-  message text not null,
-  status text not null default 'new' check (status in ('new', 'read', 'replied', 'archived')),
-  created_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id CHAR(36) NOT NULL,
+  name VARCHAR(191) NOT NULL,
+  email VARCHAR(191) NOT NULL,
+  phone VARCHAR(64) NOT NULL DEFAULT '',
+  subject VARCHAR(255) NOT NULL DEFAULT '',
+  message TEXT NOT NULL,
+  status ENUM('new', 'read', 'replied', 'archived') NOT NULL DEFAULT 'new',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY contact_messages_status_idx (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------- Datos iniciales de configuración ----------
-insert into settings (key, value) values
+INSERT IGNORE INTO settings (`key`, `value`) VALUES
   ('business', '{
     "name": "Carnalitos",
     "tagline": "Snacks y comida saludable para mascotas",
@@ -148,7 +180,7 @@ insert into settings (key, value) values
     "tiktok": "",
     "schedule": "Lunes a sábado · 8:00 a. m. a 6:00 p. m.",
     "provisional": false
-  }'::jsonb),
+  }'),
   ('store', '{
     "currency": "COP",
     "shippingCost": 12000,
@@ -158,5 +190,4 @@ insert into settings (key, value) values
     "deliveryNote": "Entregas exclusivas en Medellín en 24 a 48 horas.",
     "terms": "Los pedidos se confirman por WhatsApp o correo. El pago contraentrega está disponible en Medellín. Los productos son elaborados de forma artesanal; las imágenes son de referencia.",
     "lowStockThreshold": 5
-  }'::jsonb)
-on conflict (key) do nothing;
+  }');

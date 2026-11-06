@@ -29,6 +29,9 @@
 Thumbs.db
 *.pem
 
+# logs de sesión (no forman parte de la app)
+migraci-*.json
+
 # IDE
 .vscode/
 .idea/

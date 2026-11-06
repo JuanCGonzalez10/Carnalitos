@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { query, queryOne } from "@/lib/db";
@@ -15,8 +15,9 @@ export async function createSession(userId: string): Promise<void> {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
   await query(
-    `insert into admin_sessions (token_hash, user_id, expires_at) values ($1,$2,$3)`,
-    [hashToken(token), userId, expiresAt],
+    `insert into admin_sessions (id, token_hash, user_id, expires_at)
+     values (?,?,?, date_add(now(), interval ${SESSION_DAYS} day))`,
+    [randomUUID(), hashToken(token), userId],
   );
   const store = await cookies();
   const headerStore = await headers();
@@ -38,10 +39,10 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const user = await queryOne<AdminUser>(
-    `select u.id, u.name, u.email, u.role, u.active, u.last_login_at as "lastLoginAt"
+    `select u.id, u.name, u.email, u.role, u.active, u.last_login_at as \`lastLoginAt\`
      from admin_sessions s
      join admin_users u on u.id = s.user_id
-     where s.token_hash = $1 and s.expires_at > now() and u.active = true`,
+     where s.token_hash = ? and s.expires_at > now() and u.active = 1`,
     [hashToken(token)],
   );
   return user;
@@ -57,7 +58,7 @@ export async function destroySession(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) {
-    await query("delete from admin_sessions where token_hash = $1", [hashToken(token)]);
+    await query("delete from admin_sessions where token_hash = ?", [hashToken(token)]);
   }
   store.delete(SESSION_COOKIE);
 }
@@ -71,12 +72,34 @@ export function assertSameOrigin(request: Request): boolean {
   if (!origin) return true;
   try {
     const originUrl = new URL(origin);
-    const host = request.headers.get("host");
-    const forwardedHost = request.headers.get("x-forwarded-host");
-    if (host && originUrl.host === host) return true;
-    if (forwardedHost && originUrl.host === forwardedHost) return true;
-    if (originUrl.hostname.endsWith(".trycloudflare.com")) return true;
-    if (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1") return true;
+    const candidates = new Set<string>();
+
+    const addHost = (value: string | null | undefined) => {
+      if (!value) return;
+      for (const part of value.split(",")) {
+        const trimmed = part.trim();
+        if (trimmed) candidates.add(trimmed);
+      }
+    };
+
+    // Hostinger puede enviar el host real en Host o en X-Forwarded-Host.
+    addHost(request.headers.get("host"));
+    addHost(request.headers.get("x-forwarded-host"));
+
+    const configured = process.env.NEXT_PUBLIC_APP_URL;
+    if (configured) {
+      try {
+        addHost(new URL(configured).host);
+      } catch {
+        // NEXT_PUBLIC_APP_URL inválida: se ignoran las comparaciones extra.
+      }
+    }
+
+    if (candidates.has(originUrl.host)) return true;
+    if (process.env.NODE_ENV !== "production") {
+      if (originUrl.hostname.endsWith(".trycloudflare.com")) return true;
+      if (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1") return true;
+    }
     return false;
   } catch {
     return false;

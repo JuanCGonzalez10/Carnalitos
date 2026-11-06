@@ -1,18 +1,15 @@
 export function buildUpdateSet(
   input: Record<string, unknown>,
   fields: Record<string, string>,
-  startIndex = 1,
 ): { clause: string; values: unknown[]; nextIndex: number } {
   const parts: string[] = [];
   const values: unknown[] = [];
-  let index = startIndex;
   for (const [key, column] of Object.entries(fields)) {
     if (!(key in input) || input[key] === undefined) continue;
-    parts.push(`${column} = $${index}`);
+    parts.push(`${column} = ?`);
     values.push(input[key]);
-    index += 1;
   }
-  return { clause: parts.join(", "), values, nextIndex: index };
+  return { clause: parts.join(", "), values, nextIndex: values.length + 1 };
 }
 
 export function slugify(value: string): string {

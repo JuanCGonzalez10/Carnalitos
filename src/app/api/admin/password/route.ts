@@ -14,17 +14,17 @@ export async function PATCH(request: Request) {
     const parsed = passwordSchema.safeParse(await request.json());
     if (!parsed.success) return jsonError(parsed.error.issues[0]?.message ?? "Datos inválidos");
     const user = await queryOne<{ passwordHash: string }>(
-      "select password_hash as \"passwordHash\" from admin_users where id = $1",
+      "select password_hash as `passwordHash` from admin_users where id = ?",
       [auth.user.id],
     );
     if (!user || !verifyPassword(parsed.data.currentPassword, user.passwordHash)) {
       return jsonError("La contraseña actual no es correcta.", 401);
     }
-    await query("update admin_users set password_hash = $1 where id = $2", [
+    await query("update admin_users set password_hash = ? where id = ?", [
       hashPassword(parsed.data.newPassword),
       auth.user.id,
     ]);
-    await query("delete from admin_sessions where user_id = $1", [auth.user.id]);
+    await query("delete from admin_sessions where user_id = ?", [auth.user.id]);
     await createSession(auth.user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {

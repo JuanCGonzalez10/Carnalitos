@@ -1,7 +1,7 @@
-import { Client } from "pg";
-import { scryptSync, randomBytes } from "node:crypto";
+import mysql from "mysql2/promise";
+import { scryptSync, randomBytes, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { databaseUrl, sslConfig } from "./db-config.mjs";
+import { connectionConfig } from "./db-config.mjs";
 
 export function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
@@ -355,49 +355,53 @@ const demoMessages = [
 ];
 
 export async function seed() {
-  const client = new Client({ connectionString: databaseUrl(), ssl: sslConfig() });
-  await client.connect();
+  const connection = await mysql.createConnection(connectionConfig());
 
   try {
-    await client.query("begin");
+    await connection.beginTransaction();
 
     const adminName = process.env.ADMIN_NAME || "Administrador Carnalitos";
     const adminEmail = (process.env.ADMIN_EMAIL || "admin@carnalitos.co").toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || "Carnalitos2026!";
-    await client.query(
-      `insert into admin_users (name, email, password_hash, role)
-       values ($1, $2, $3, 'admin')
-       on conflict (email) do update
-       set name = excluded.name, password_hash = excluded.password_hash, active = true`,
-      [adminName, adminEmail, hashPassword(adminPassword)],
+    await connection.query(
+      `insert into admin_users (id, name, email, password_hash, role)
+       values (?, ?, ?, ?, 'admin')
+       on duplicate key update
+         name = values(name),
+         password_hash = values(password_hash),
+         active = 1`,
+      [randomUUID(), adminName, adminEmail, hashPassword(adminPassword)],
     );
     console.log(`✓ Administrador: ${adminEmail}`);
 
     const categoryIds = {};
     for (const category of categories) {
-      const row = await client.query(
-        `insert into categories (slug, name, description, icon, sort_order, active)
-         values ($1,$2,$3,$4,$5,true)
-         on conflict (slug) do update set
-           name = excluded.name,
-           description = excluded.description,
-           icon = excluded.icon,
-           sort_order = excluded.sort_order
-         returning id`,
-        [category.slug, category.name, category.description, category.icon, category.sort],
+      await connection.query(
+        `insert into categories (id, slug, name, description, icon, sort_order, active)
+         values (?, ?, ?, ?, ?, ?, 1)
+         on duplicate key update
+           name = values(name),
+           description = values(description),
+           icon = values(icon),
+           sort_order = values(sort_order)`,
+        [randomUUID(), category.slug, category.name, category.description, category.icon, category.sort],
       );
-      categoryIds[category.slug] = row.rows[0].id;
+      const [rows] = await connection.query("select id from categories where slug = ?", [
+        category.slug,
+      ]);
+      categoryIds[category.slug] = rows[0].id;
     }
     console.log(`✓ ${categories.length} categorías`);
 
     for (const product of products) {
-      await client.query(
+      await connection.query(
         `insert into products
-          (slug, name, category_id, short_description, description, price, compare_at_price,
+          (id, slug, name, category_id, short_description, description, price, compare_at_price,
            stock, sku, unit, weight, pet_type, benefits, ingredients, image, active, featured, sort_order)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,true,$16,$17)
-         on conflict (slug) do nothing`,
+         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+         on duplicate key update slug = values(slug)`,
         [
+          randomUUID(),
           product.slug,
           product.name,
           categoryIds[product.category] ?? null,
@@ -410,7 +414,7 @@ export async function seed() {
           product.unit,
           product.weight,
           product.pet,
-          product.benefits,
+          JSON.stringify(product.benefits),
           product.ingredients,
           product.image,
           product.featured,
@@ -420,16 +424,16 @@ export async function seed() {
     }
     console.log(`✓ ${products.length} productos`);
 
-    const orderCount = await client.query("select count(*)::int as n from orders");
-    if (orderCount.rows[0].n === 0) {
+    const [orderCount] = await connection.query("select count(*) as n from orders");
+    if (Number(orderCount[0].n) === 0) {
       for (const demo of demoOrders) {
         const itemRows = [];
         for (const [slug, quantity] of demo.items) {
-          const row = await client.query(
-            "select id, name, price, image from products where slug = $1",
+          const [rows] = await connection.query(
+            "select id, name, price, image from products where slug = ?",
             [slug],
           );
-          const product = row.rows[0];
+          const product = rows[0];
           if (!product) continue;
           itemRows.push({
             id: product.id,
@@ -443,16 +447,17 @@ export async function seed() {
 
         const subtotal = itemRows.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const total = subtotal + demo.shipping;
-        const order = await client.query(
+        const orderId = randomUUID();
+        await connection.query(
           `insert into orders
-            (code, customer_name, customer_email, customer_phone, delivery_method,
+            (id, code, customer_name, customer_email, customer_phone, delivery_method,
              address, city, notes, subtotal, shipping, total, status,
              payment_method, payment_status, created_at, updated_at)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
-             now() - ($15 || ' days')::interval, now() - ($15 || ' days')::interval)
-           on conflict (code) do nothing
-           returning id`,
+           values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+             date_sub(now(), interval ? day), date_sub(now(), interval ? day))
+           on duplicate key update code = values(code)`,
           [
+            orderId,
             demo.code,
             demo.name,
             demo.email,
@@ -467,16 +472,25 @@ export async function seed() {
             demo.status,
             demo.paymentMethod,
             demo.paymentStatus,
-            String(demo.daysAgo),
+            demo.daysAgo,
+            demo.daysAgo,
           ],
         );
-        if (!order.rows[0]) continue;
-        const orderId = order.rows[0].id;
+
         for (const item of itemRows) {
-          await client.query(
-            `insert into order_items (order_id, product_id, product_name, unit_price, quantity, total, image)
-             values ($1,$2,$3,$4,$5,$6,$7)`,
-            [orderId, item.id, item.name, item.price, item.quantity, item.price * item.quantity, item.image],
+          await connection.query(
+            `insert into order_items (id, order_id, product_id, product_name, unit_price, quantity, total, image)
+             values (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              randomUUID(),
+              orderId,
+              item.id,
+              item.name,
+              item.price,
+              item.quantity,
+              item.price * item.quantity,
+              item.image,
+            ],
           );
         }
       }
@@ -485,32 +499,33 @@ export async function seed() {
       console.log("· Pedidos existentes: no se crean datos demo");
     }
 
-    const messageCount = await client.query("select count(*)::int as n from contact_messages");
-    if (messageCount.rows[0].n === 0) {
+    const [messageCount] = await connection.query("select count(*) as n from contact_messages");
+    if (Number(messageCount[0].n) === 0) {
       for (const message of demoMessages) {
-        await client.query(
-          `insert into contact_messages (name, email, phone, subject, message, status, created_at)
-           values ($1,$2,$3,$4,$5,$6, now() - ($7 || ' days')::interval)`,
+        await connection.query(
+          `insert into contact_messages (id, name, email, phone, subject, message, status, created_at)
+           values (?, ?, ?, ?, ?, ?, ?, date_sub(now(), interval ? day))`,
           [
+            randomUUID(),
             message.name,
             message.email,
             message.phone,
             message.subject,
             message.message,
             message.status,
-            String(message.daysAgo),
+            message.daysAgo,
           ],
         );
       }
       console.log(`✓ ${demoMessages.length} mensajes de ejemplo`);
     }
 
-    await client.query("commit");
+    await connection.commit();
   } catch (error) {
-    await client.query("rollback");
+    await connection.rollback();
     throw error;
   } finally {
-    await client.end();
+    await connection.end();
   }
 }
 

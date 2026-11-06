@@ -40,8 +40,8 @@ export async function POST(request: Request) {
     role: string;
     active: boolean;
   }>(
-    `select id, name, email, password_hash as "passwordHash", role, active
-     from admin_users where lower(email) = lower($1)`,
+    `select id, name, email, password_hash as \`passwordHash\`, role, active
+     from admin_users where lower(email) = lower(?)`,
     [parsed.data.email],
   );
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   await createSession(user.id);
-  await query("update admin_users set last_login_at = now() where id = $1", [user.id]);
+  await query("update admin_users set last_login_at = now() where id = ?", [user.id]);
   clearRateLimit(`login:${ip}`);
   void cleanupSessions();
 

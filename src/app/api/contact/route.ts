@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { contactSchema } from "@/lib/validation";
@@ -22,9 +23,9 @@ export async function POST(request: Request) {
   }
   const data = parsed.data;
   await query(
-    `insert into contact_messages (name, email, phone, subject, message)
-     values ($1,$2,$3,$4,$5)`,
-    [data.name, data.email, data.phone, data.subject, data.message],
+    `insert into contact_messages (id, name, email, phone, subject, message)
+     values (?,?,?,?,?,?)`,
+    [randomUUID(), data.name, data.email, data.phone, data.subject, data.message],
   );
   return NextResponse.json({ ok: true });
 }

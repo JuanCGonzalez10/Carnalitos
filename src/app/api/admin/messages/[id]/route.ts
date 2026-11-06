@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) return jsonError("Estado inválido");
-    await query("update contact_messages set status = $1 where id = $2", [parsed.data.status, id]);
+    await query("update contact_messages set status = ? where id = ?", [parsed.data.status, id]);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return handleApiError(error, "update message");

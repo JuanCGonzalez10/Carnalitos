@@ -63,7 +63,7 @@ No hay pasarela de pagos conectada: el administrador confirma el pago manualment
 |---|---|
 | Framework | Next.js 16 (App Router, React Compiler) |
 | UI | React 19, TypeScript, Tailwind CSS, Framer Motion |
-| Base de datos | PostgreSQL (`pg`) |
+| Base de datos | MySQL / MariaDB (`mysql2`) |
 | Autenticación | Sesiones propias con scrypt + cookie HTTP-only |
 | Validación | Zod |
 
@@ -72,8 +72,9 @@ No hay pasarela de pagos conectada: el administrador confirma el pago manualment
 ## Requisitos
 
 - **Node.js 20+** (probado con Node 22).
-- **PostgreSQL 14+** con permisos para crear extensiones (`pgcrypto`).
+- **MySQL 8+** o **MariaDB 10.6+** (Hostinger usa MariaDB). También sirve el contenedor `mysql:8.4` incluido en `docker-compose.yml`.
 - npm.
+- Opcional: Docker Desktop para levantar MySQL local sin instalarlo.
 
 ---
 
@@ -97,13 +98,21 @@ No hay pasarela de pagos conectada: el administrador confirma el pago manualment
    Copy-Item .env.example .env.local
    ```
 
-3. **Configura PostgreSQL** en `.env.local`:
+3. **Levanta MySQL** (opcional con Docker) y configura `.env.local`:
 
-   ```env
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/carnalitos
+   ```bash
+   npm run db:up
    ```
 
-   El script crea la base de datos si no existe.
+   ```env
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_USER=carnalitos
+   DB_PASSWORD=carnalitos
+   DB_NAME=carnalitos
+   ```
+
+   Si ya tienes MySQL/MariaDB instalado, crea la base y el usuario y usa esas credenciales. El script crea la base si el usuario tiene permisos; en Hostinger se crea desde hPanel.
 
 4. **Aplica el esquema y carga los datos iniciales**
 
@@ -137,14 +146,20 @@ Todas viven en `.env.local`. El archivo `.env.example` sirve como plantilla.
 
 | Variable | Obligatoria | Descripción |
 |---|---|---|
-| `DATABASE_URL` | Sí | Cadena de conexión de PostgreSQL |
-| `DATABASE_SSL` | No | `true` para proveedores gestionados que exigen SSL |
+| `DB_HOST` | Sí | Host de MySQL. En Hostinger debe ser `127.0.0.1` |
+| `DB_PORT` | No | Puerto de MySQL (por defecto `3306`) |
+| `DB_USER` | Sí | Usuario completo de la base (incluye prefijo en Hostinger) |
+| `DB_PASSWORD` | Sí | Contraseña de la base |
+| `DB_NAME` | Sí | Nombre completo de la base (incluye prefijo en Hostinger) |
+| `DATABASE_URL` | No | Alternativa: `mysql://usuario:clave@127.0.0.1:3306/base` |
+| `DB_CONNECTION_LIMIT` | No | Conexiones del pool (por defecto `5`) |
+| `DB_SSL` | No | `true` si el proveedor externo exige SSL |
 | `ADMIN_NAME` | No | Nombre del administrador inicial |
 | `ADMIN_EMAIL` | Sí | Correo del administrador inicial |
 | `ADMIN_PASSWORD` | Sí | Contraseña del administrador inicial |
 | `NEXT_PUBLIC_APP_URL` | No | URL pública del sitio (metadatos y enlaces) |
 | `NEXT_PUBLIC_WHATSAPP` | No | Número de WhatsApp de respaldo |
-| `UPLOAD_DIR` | No | Carpeta local de imágenes subidas (por defecto `storage/uploads`) |
+| `UPLOAD_DIR` | No | Carpeta de imágenes subidas (por defecto `storage/uploads`). En Hostinger usa una ruta **absoluta persistente** |
 
 ---
 
@@ -152,6 +167,8 @@ Todas viven en `.env.local`. El archivo `.env.example` sirve como plantilla.
 
 | Comando | Qué hace |
 |---|---|
+| `npm run db:up` | Levanta MySQL 8.4 local con Docker (opcional) |
+| `npm run db:down` | Detiene el contenedor de MySQL local |
 | `npm run db:setup` | Crea la base si falta, aplica `database/schema.sql` y ejecuta el seed |
 | `npm run db:seed` | Vuelve a cargar datos iniciales sin borrar la base |
 | `npm run db:reset` | **Elimina todas las tablas** y reconstruye desde cero |
@@ -161,7 +178,9 @@ Todas viven en `.env.local`. El archivo `.env.example` sirve como plantilla.
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Verificación de tipos |
 
-El esquema es idempotente (`create table if not exists`). El seed crea/actualiza el administrador, inserta las categorías con `on conflict do update`, y **no sobrescribe** productos existentes (`on conflict do nothing`), para respetar los cambios de precio o stock hechos desde el panel.
+El esquema es idempotente (`create table if not exists`). El seed crea/actualiza el administrador, inserta las categorías con `on duplicate key update` y **no sobrescribe** productos existentes, para respetar los cambios de precio o stock hechos desde el panel.
+
+Para producción en Hostinger hay un archivo adicional `database/seed-production.sql` con el administrador, la configuración, las categorías y los productos (sin pedidos ni mensajes de demostración). Se importa desde phpMyAdmin después de `database/schema.sql`.
 
 ### Tablas principales
 
@@ -252,11 +271,14 @@ La base de datos guarda la URL de cada imagen; si migras a S3, solo cambia la UR
 
 ```text
 database/
-  schema.sql                 Esquema PostgreSQL, índices y settings iniciales
+  schema.sql                 Esquema MySQL/MariaDB, índices y settings iniciales
+  seed-production.sql        Datos iniciales para importar en Hostinger
+  install-hostinger.sql      Esquema + datos en un único archivo para phpMyAdmin
 scripts/
   setup-db.mjs               Crea la base, aplica el esquema y ejecuta el seed
   seed.mjs                   Categorías, productos, pedidos demo y administrador
   db-config.mjs              Conexión, SSL y utilidades de base de datos
+  bundle-sql.mjs             Regenera install-hostinger.sql
 public/
   images/productos/          Ilustraciones SVG locales
 src/
@@ -276,7 +298,7 @@ src/
     data/                    Consultas de productos y pedidos
     store/                   Formato de moneda
     api/                     Guardas de autenticación
-    db.ts                    Pool de PostgreSQL y transacciones
+    db.ts                    Pool de MySQL/MariaDB y transacciones
     settings.ts              Configuración editable
     storage.ts               Directorio de subidas
     uploads.ts               Validación y subida en el navegador
@@ -291,9 +313,24 @@ middleware.ts                Protección de /admin y /api/admin
 
 ## Despliegue
 
-La app necesita un entorno **Node.js** con acceso a PostgreSQL y, para imágenes locales, un disco persistente. Opciones habituales: VPS, Docker, Render, Railway o Fly.io con volumen.
+La app necesita un entorno **Node.js** con acceso a MySQL/MariaDB y, para imágenes locales, un disco persistente.
 
-### Pasos generales
+### Hostinger (plan Ilimitado / Business)
+
+El plan **Ilimitado** de Hostinger corresponde a **Business/Unlimited**, que admite aplicaciones Node.js y Next.js. La guía paso a paso está en:
+
+- [`DEPLOY-HOSTINGER.md`](DEPLOY-HOSTINGER.md)
+
+Resumen:
+
+1. Crea la base de datos y el usuario en **hPanel → Bases de datos**. Anota el nombre completo con prefijo y usa `DB_HOST=127.0.0.1`.
+2. Importa `database/install-hostinger.sql` desde phpMyAdmin (crea tablas, administrador, configuración, categorías y productos en un solo paso).
+3. Sube el proyecto a GitHub (recomendado) o en un `.zip` sin `node_modules`, `.next` ni `storage/uploads`.
+4. Crea el sitio como **Web App → Next.js**, selecciona Node 22 y define las variables de entorno.
+5. Usa una ruta absoluta persistente en `UPLOAD_DIR`, por ejemplo `/home/u123456789/domains/tudominio.com/storage/uploads`.
+6. Despliega, abre `/api/health` para confirmar la conexión, entra a `/admin/login`, cambia la contraseña y prueba una compra.
+
+### Otros entornos
 
 1. Configura las variables de entorno de producción.
 2. Ejecuta `npm run db:setup` (o aplica `database/schema.sql` y luego el seed) contra la base de producción.
@@ -305,8 +342,9 @@ La app necesita un entorno **Node.js** con acceso a PostgreSQL y, para imágenes
 ### Notas
 
 - Las rutas de subida usan el runtime de Node.js (`export const runtime = "nodejs"`).
-- En Vercel, las imágenes locales no persisten; usa S3 o un volumen externo.
-- El middleware de Next.js 16 sigue funcionando, aunque la versión actual recomienda migrar a la convención `proxy`.
+- En plataformas con disco efímero (Vercel, contenedores sin volumen) las imágenes locales no persisten; usa S3 o un volumen externo.
+- El build usa `next build --webpack` para evitar el fallo de Turbopack en los servidores de build de Hostinger.
+- El middleware de Next.js 16 sigue funcionando mediante `src/proxy.ts`.
 
 ---
 
@@ -317,10 +355,10 @@ La app necesita un entorno **Node.js** con acceso a PostgreSQL y, para imágenes
 - [ ] Configura HTTPS en producción.
 - [ ] Revisa `ADMIN_EMAIL` y elimina usuarios que no necesites.
 - [ ] No publiques `.env.local` (ya está en `.gitignore`).
-- [ ] Define `DATABASE_SSL=true` si tu proveedor lo exige.
-- [ ] Limita el acceso a la base de datos por red/firewall.
+- [ ] Define `DB_SSL=true` solo si tu proveedor externo lo exige.
+- [ ] Limita el acceso remoto a la base de datos (Hostinger la expone solo en `127.0.0.1` por defecto).
 - [ ] Revisa textos, precios, condiciones y datos legales antes de abrir al público.
-- [ ] Configura copias de seguridad de PostgreSQL y del directorio de imágenes.
+- [ ] Configura copias de seguridad de la base MySQL y del directorio de imágenes.
 - [ ] Si conectas pagos reales, valida los webhooks y nunca confíes solo en el cliente.
 
 ---
@@ -329,9 +367,11 @@ La app necesita un entorno **Node.js** con acceso a PostgreSQL y, para imágenes
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| `ECONNREFUSED` al iniciar | PostgreSQL no está corriendo o `DATABASE_URL` es incorrecta | Inicia PostgreSQL y revisa la cadena de conexión |
-| `extension "pgcrypto" is not available` | El usuario no puede crear extensiones | Usa un superusuario o habilita la extensión manualmente |
-| Las columnas nuevas no existen | Esquema anterior | Ejecuta `npm run db:setup` |
+| `ECONNREFUSED` al iniciar | MySQL no está corriendo o el host/puerto es incorrecto | Ejecuta `npm run db:up` o inicia MySQL; revisa `DB_HOST`/`DB_PORT` |
+| `Access denied for user ...@'::1'` | Node resolvió `localhost` a IPv6 | En Hostinger usa `DB_HOST=127.0.0.1` |
+| `ER_BAD_DB_ERROR` | La base no existe | Créala en hPanel/phpMyAdmin o ejecuta `npm run db:setup` |
+| `Duplicate entry` al guardar | Slug, correo o código repetido | Cambia el valor; la API ya responde 409 en categorías/productos |
+| Las columnas nuevas no existen | Esquema anterior | Ejecuta `npm run db:setup` (o importa el esquema actualizado) |
 | Una imagen no sube | Formato no soportado o más de 20 MB | Convierte a JPG/PNG/WebP y reduce el tamaño |
 | La imagen desaparece tras un despliegue | Disco efímero en serverless | Usa un volumen persistente o S3 |
 | No puedo entrar al panel | Credenciales distintas o sesión expirada | Revisa `.env.local`, vuelve a ejecutar el seed o cambia la contraseña |
