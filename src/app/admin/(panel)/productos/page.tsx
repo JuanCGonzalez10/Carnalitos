@@ -16,7 +16,7 @@ export default async function AdminProductsPage({
 }) {
   const params = await searchParams;
   const [products, categories] = await Promise.all([
-    listProducts({ includeInactive: true }),
+    listProducts({ includeInactive: true, includeCost: true }),
     listCategories(true),
   ]);
 

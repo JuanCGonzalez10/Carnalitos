@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS products (
   short_description TEXT NOT NULL,
   description TEXT NOT NULL,
   price DECIMAL(12, 2) NOT NULL,
+  cost DECIMAL(12, 2) NOT NULL DEFAULT 0,
   compare_at_price DECIMAL(12, 2) NULL,
   stock INT NOT NULL DEFAULT 0,
   sku VARCHAR(100) NOT NULL DEFAULT '',
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS products (
   CONSTRAINT products_category_fk
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
   CONSTRAINT products_price_ck CHECK (price >= 0),
+  CONSTRAINT products_cost_ck CHECK (cost >= 0),
   CONSTRAINT products_compare_price_ck CHECK (compare_at_price IS NULL OR compare_at_price >= 0),
   CONSTRAINT products_stock_ck CHECK (stock >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -133,6 +135,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id CHAR(36) NULL,
   product_name VARCHAR(191) NOT NULL,
   unit_price DECIMAL(12, 2) NOT NULL,
+  unit_cost DECIMAL(12, 2) NOT NULL DEFAULT 0,
   quantity INT NOT NULL DEFAULT 1,
   total DECIMAL(12, 2) NOT NULL,
   image VARCHAR(500) NOT NULL DEFAULT '',
@@ -145,6 +148,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT order_items_product_fk
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
   CONSTRAINT order_items_price_ck CHECK (unit_price >= 0),
+  CONSTRAINT order_items_cost_ck CHECK (unit_cost >= 0),
   CONSTRAINT order_items_quantity_ck CHECK (quantity > 0),
   CONSTRAINT order_items_total_ck CHECK (total >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

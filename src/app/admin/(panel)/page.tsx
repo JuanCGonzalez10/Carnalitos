@@ -50,6 +50,9 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/caja" className="btn-dark btn-sm">
             <Icon name="money" className="h-3.5 w-3.5" /> Caja registradora
           </Link>
+          <Link href="/admin/contabilidad" className="btn-outline btn-sm">
+            <Icon name="invoice" className="h-3.5 w-3.5" /> Contabilidad
+          </Link>
           <Link href="/admin/productos?nuevo=1" className="btn-outline btn-sm">
             <Icon name="plus" className="h-3.5 w-3.5" /> Nuevo producto
           </Link>

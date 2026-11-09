@@ -76,7 +76,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     const ids = [...new Set(input.items.map((item) => item.productId))];
     const placeholders = ids.map(() => "?").join(",");
     const [productRows] = await connection.query(
-      `select id, name, price, stock, image, active
+      `select id, name, price, cost, stock, image, active
        from products where id in (${placeholders}) for update`,
       ids,
     );
@@ -85,6 +85,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         id: string;
         name: string;
         price: number;
+        cost: number;
         stock: number;
         image: string;
         active: boolean;
@@ -143,14 +144,15 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     for (const line of lines) {
       await connection.query(
         `insert into order_items
-          (id, order_id, product_id, product_name, unit_price, quantity, total, image)
-         values (?,?,?,?,?,?,?,?)`,
+          (id, order_id, product_id, product_name, unit_price, unit_cost, quantity, total, image)
+         values (?,?,?,?,?,?,?,?,?)`,
         [
           randomUUID(),
           createdOrderId,
           line.product.id,
           line.product.name,
           line.product.price,
+          Number(line.product.cost) || 0,
           line.quantity,
           line.total,
           line.product.image,
@@ -191,7 +193,7 @@ export async function createPosSale(input: PosSaleInput): Promise<Order> {
     const ids = [...new Set(input.items.map((item) => item.productId))];
     const placeholders = ids.map(() => "?").join(",");
     const [productRows] = await connection.query(
-      `select id, name, price, stock, image, active
+      `select id, name, price, cost, stock, image, active
        from products where id in (${placeholders}) for update`,
       ids,
     );
@@ -200,6 +202,7 @@ export async function createPosSale(input: PosSaleInput): Promise<Order> {
         id: string;
         name: string;
         price: number;
+        cost: number;
         stock: number;
         image: string;
         active: boolean;
@@ -263,14 +266,15 @@ export async function createPosSale(input: PosSaleInput): Promise<Order> {
     for (const line of lines) {
       await connection.query(
         `insert into order_items
-          (id, order_id, product_id, product_name, unit_price, quantity, total, image)
-         values (?,?,?,?,?,?,?,?)`,
+          (id, order_id, product_id, product_name, unit_price, unit_cost, quantity, total, image)
+         values (?,?,?,?,?,?,?,?,?)`,
         [
           randomUUID(),
           createdOrderId,
           line.product.id,
           line.product.name,
           line.product.price,
+          Number(line.product.cost) || 0,
           line.quantity,
           line.total,
           line.product.image,
@@ -601,3 +605,281 @@ export async function getOrdersForRange(from: string, to: string): Promise<Order
     [from, to],
   );
 }
+
+// ---------------------------------------------------------------------------
+// Contabilidad
+//
+// Ingresos = ventas no canceladas del periodo.
+// Costo de ventas = suma de (cantidad × costo unitario congelado al vender).
+// Ganancia bruta = ingresos − costo de ventas.
+// Ganancia neta = ganancia bruta − gastos operativos indicados por el usuario.
+// ---------------------------------------------------------------------------
+
+export interface AccountingSale {
+  id: string;
+  code: string;
+  customerName: string;
+  createdAt: string;
+  day: string;
+  month: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  channel: "pos" | "online";
+  itemsCount: number;
+  units: number;
+  uncostedUnits: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number;
+}
+
+export interface AccountingGroup {
+  key: string;
+  orders: number;
+  units: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number;
+}
+
+export interface AccountingProduct {
+  name: string;
+  quantity: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number;
+}
+
+export interface AccountingReport {
+  from: string;
+  to: string;
+  expenses: number;
+  sales: AccountingSale[];
+  totals: {
+    orders: number;
+    cancelled: number;
+    units: number;
+    revenue: number;
+    cost: number;
+    grossProfit: number;
+    grossMargin: number;
+    expenses: number;
+    netProfit: number;
+    netMargin: number;
+    averageTicket: number;
+    salesWithoutCost: number;
+  };
+  byDay: AccountingGroup[];
+  byMonth: AccountingGroup[];
+  byPaymentMethod: Array<{ method: string; orders: number; revenue: number; profit: number }>;
+  channels: Array<{ channel: "pos" | "online"; orders: number; revenue: number }>;
+  topProducts: AccountingProduct[];
+}
+
+function percent(part: number, base: number): number {
+  return base > 0 ? (part / base) * 100 : 0;
+}
+
+function emptyGroup(key: string): AccountingGroup {
+  return { key, orders: 0, units: 0, revenue: 0, cost: 0, profit: 0, margin: 0 };
+}
+
+function addToGroup(group: AccountingGroup, sale: AccountingSale): void {
+  group.orders += 1;
+  group.units += sale.units;
+  group.revenue += sale.revenue;
+  group.cost += sale.cost;
+}
+
+function finishGroup(group: AccountingGroup): AccountingGroup {
+  group.profit = group.revenue - group.cost;
+  group.margin = percent(group.profit, group.revenue);
+  return group;
+}
+
+export async function getAccountingReport(
+  from: string,
+  to: string,
+  expenses = 0,
+): Promise<AccountingReport> {
+  interface AccountingRow {
+    id: string;
+    code: string;
+    customerName: string;
+    createdAt: string;
+    day: string;
+    month: string;
+    status: string;
+    paymentStatus: string;
+    paymentMethod: string;
+    total: number | string;
+    units: number | string;
+    cost: number | string;
+    uncostedUnits: number | string;
+    itemsCount: number | string;
+  }
+
+  const [rows, productRows] = await Promise.all([
+    query<AccountingRow>(
+      `select
+         o.id, o.code,
+         o.customer_name as \`customerName\`,
+         date_format(o.created_at, '%Y-%m-%d') as \`day\`,
+         date_format(o.created_at, '%Y-%m') as \`month\`,
+         o.created_at as \`createdAt\`,
+         o.status,
+         o.payment_status as \`paymentStatus\`,
+         o.payment_method as \`paymentMethod\`,
+         o.total,
+         coalesce((select sum(oi.quantity) from order_items oi where oi.order_id = o.id), 0) as units,
+         coalesce((select sum(oi.quantity * oi.unit_cost) from order_items oi where oi.order_id = o.id), 0) as cost,
+         coalesce((select sum(oi.quantity) from order_items oi
+                   where oi.order_id = o.id and oi.unit_cost <= 0), 0) as \`uncostedUnits\`,
+         coalesce((select count(*) from order_items oi where oi.order_id = o.id), 0) as \`itemsCount\`
+       from orders o
+       where ${DATE_RANGE}
+       order by o.created_at desc`,
+      [from, to],
+    ),
+    query<{
+      name: string;
+      quantity: number | string;
+      revenue: number | string;
+      cost: number | string;
+    }>(
+      `select oi.product_name as name,
+         sum(oi.quantity) as quantity,
+         sum(oi.total) as revenue,
+         sum(oi.quantity * oi.unit_cost) as cost
+       from order_items oi
+       join orders o on o.id = oi.order_id
+       where o.status <> 'cancelled' and ${DATE_RANGE}
+       group by oi.product_name
+       order by revenue desc
+       limit 12`,
+      [from, to],
+    ),
+  ]);
+
+  const sales: AccountingSale[] = rows.map((row) => {
+    const cancelled = row.status === "cancelled";
+    const revenue = cancelled ? 0 : Number(row.total) || 0;
+    const cost = cancelled ? 0 : Number(row.cost) || 0;
+    const profit = revenue - cost;
+    return {
+      id: row.id,
+      code: row.code,
+      customerName: row.customerName,
+      createdAt: row.createdAt,
+      day: row.day,
+      month: row.month,
+      status: row.status,
+      paymentStatus: row.paymentStatus,
+      paymentMethod: row.paymentMethod,
+      channel: row.code.startsWith("POS-") ? "pos" : "online",
+      itemsCount: Number(row.itemsCount) || 0,
+      units: Number(row.units) || 0,
+      uncostedUnits: Number(row.uncostedUnits) || 0,
+      revenue,
+      cost,
+      profit,
+      margin: percent(profit, revenue),
+    };
+  });
+
+  const activeSales = sales.filter((sale) => sale.status !== "cancelled");
+  const revenue = activeSales.reduce((sum, sale) => sum + sale.revenue, 0);
+  const cost = activeSales.reduce((sum, sale) => sum + sale.cost, 0);
+  const units = activeSales.reduce((sum, sale) => sum + sale.units, 0);
+  const grossProfit = revenue - cost;
+  const safeExpenses = Math.max(0, Number(expenses) || 0);
+  const netProfit = grossProfit - safeExpenses;
+
+  const dayGroups = new Map<string, AccountingGroup>();
+  const monthGroups = new Map<string, AccountingGroup>();
+  const paymentGroups = new Map<string, { method: string; orders: number; revenue: number; profit: number }>();
+  const channelGroups = new Map<"pos" | "online", { channel: "pos" | "online"; orders: number; revenue: number }>();
+
+  for (const sale of activeSales) {
+    const dayGroup = dayGroups.get(sale.day) ?? emptyGroup(sale.day);
+    addToGroup(dayGroup, sale);
+    dayGroups.set(sale.day, dayGroup);
+
+    const monthGroup = monthGroups.get(sale.month) ?? emptyGroup(sale.month);
+    addToGroup(monthGroup, sale);
+    monthGroups.set(sale.month, monthGroup);
+
+    const payment = paymentGroups.get(sale.paymentMethod) ?? {
+      method: sale.paymentMethod,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    };
+    payment.orders += 1;
+    payment.revenue += sale.revenue;
+    payment.profit += sale.profit;
+    paymentGroups.set(sale.paymentMethod, payment);
+
+    const channel = channelGroups.get(sale.channel) ?? {
+      channel: sale.channel,
+      orders: 0,
+      revenue: 0,
+    };
+    channel.orders += 1;
+    channel.revenue += sale.revenue;
+    channelGroups.set(sale.channel, channel);
+  }
+
+  const byDay = Array.from(dayGroups.values())
+    .map(finishGroup)
+    .sort((a, b) => b.key.localeCompare(a.key));
+
+  const byMonth = Array.from(monthGroups.values())
+    .map(finishGroup)
+    .sort((a, b) => b.key.localeCompare(a.key));
+
+  const topProducts: AccountingProduct[] = productRows.map((row) => {
+    const itemRevenue = Number(row.revenue) || 0;
+    const itemCost = Number(row.cost) || 0;
+    const itemProfit = itemRevenue - itemCost;
+    return {
+      name: row.name,
+      quantity: Number(row.quantity) || 0,
+      revenue: itemRevenue,
+      cost: itemCost,
+      profit: itemProfit,
+      margin: percent(itemProfit, itemRevenue),
+    };
+  });
+
+  return {
+    from,
+    to,
+    expenses: safeExpenses,
+    sales,
+    totals: {
+      orders: activeSales.length,
+      cancelled: sales.length - activeSales.length,
+      units,
+      revenue,
+      cost,
+      grossProfit,
+      grossMargin: percent(grossProfit, revenue),
+      expenses: safeExpenses,
+      netProfit,
+      netMargin: percent(netProfit, revenue),
+      averageTicket: activeSales.length > 0 ? revenue / activeSales.length : 0,
+      salesWithoutCost: activeSales.filter((sale) => sale.revenue > 0 && sale.cost === 0).length,
+    },
+    byDay,
+    byMonth,
+    byPaymentMethod: Array.from(paymentGroups.values()).sort((a, b) => b.revenue - a.revenue),
+    channels: Array.from(channelGroups.values()).sort((a, b) => b.revenue - a.revenue),
+    topProducts,
+  };
+}
+

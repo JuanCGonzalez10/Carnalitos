@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import ImageField from "@/components/admin/ImageField";
+import { formatCOP } from "@/lib/store/format";
 import type { Category, Product } from "@/types";
 
 type Draft = {
@@ -14,6 +15,7 @@ type Draft = {
   shortDescription: string;
   description: string;
   price: string;
+  cost: string;
   compareAtPrice: string;
   stock: string;
   sku: string;
@@ -35,6 +37,7 @@ const EMPTY_DRAFT: Draft = {
   shortDescription: "",
   description: "",
   price: "",
+  cost: "0",
   compareAtPrice: "",
   stock: "0",
   sku: "",
@@ -58,6 +61,7 @@ function draftFromProduct(product: Product): Draft {
     shortDescription: product.shortDescription,
     description: product.description,
     price: String(product.price),
+    cost: String(product.cost ?? 0),
     compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
     stock: String(product.stock),
     sku: product.sku,
@@ -81,6 +85,7 @@ function toPayload(draft: Draft) {
     shortDescription: draft.shortDescription,
     description: draft.description,
     price: draft.price,
+    cost: draft.cost === "" ? 0 : draft.cost,
     compareAtPrice: draft.compareAtPrice === "" ? null : draft.compareAtPrice,
     stock: draft.stock,
     sku: draft.sku,
@@ -149,6 +154,11 @@ export default function ProductsManager({
   }, [products, search, categoryFilter, statusFilter]);
 
   const lowStockCount = products.filter((product) => product.active && product.stock <= 5).length;
+
+  const draftPrice = Number(draft.price) || 0;
+  const draftCost = Number(draft.cost) || 0;
+  const draftProfit = draftPrice - draftCost;
+  const draftMargin = draftPrice > 0 ? (draftProfit / draftPrice) * 100 : 0;
 
   function openCreate() {
     setDraft(EMPTY_DRAFT);
@@ -319,6 +329,8 @@ export default function ProductsManager({
                 <th>Producto</th>
                 <th>Categoría</th>
                 <th>Precio</th>
+                <th>Costo</th>
+                <th>Margen</th>
                 <th>Stock</th>
                 <th>Estado</th>
                 <th className="text-right">Acciones</th>
@@ -327,7 +339,7 @@ export default function ProductsManager({
             <tbody>
               {filtered.map((product) => (
                 <ProductRow
-                  key={`${product.id}-${product.price}-${product.stock}`}
+                  key={`${product.id}-${product.price}-${product.cost ?? 0}-${product.stock}`}
                   product={product}
                   busy={busy === product.id}
                   onSave={(patch) => quickUpdate(product, patch)}
@@ -338,7 +350,7 @@ export default function ProductsManager({
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm text-ink/35">
+                  <td colSpan={8} className="py-10 text-center text-sm text-ink/35">
                     No hay productos que coincidan con los filtros.
                   </td>
                 </tr>
@@ -409,6 +421,11 @@ export default function ProductsManager({
                     <input required type="number" min={0} step={100} value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })} className="admin-input" />
                   </div>
                   <div>
+                    <label className="admin-label">Costo (COP)</label>
+                    <input type="number" min={0} step={100} value={draft.cost} onChange={(event) => setDraft({ ...draft, cost: event.target.value })} className="admin-input" />
+                    <p className="mt-1 text-[10px] text-ink/40">Cuánto te cuesta producirlo o comprarlo.</p>
+                  </div>
+                  <div>
                     <label className="admin-label">Precio anterior</label>
                     <input type="number" min={0} step={100} value={draft.compareAtPrice} onChange={(event) => setDraft({ ...draft, compareAtPrice: event.target.value })} className="admin-input" />
                   </div>
@@ -439,6 +456,27 @@ export default function ProductsManager({
                   <div>
                     <label className="admin-label">Orden</label>
                     <input type="number" min={0} value={draft.sortOrder} onChange={(event) => setDraft({ ...draft, sortOrder: event.target.value })} className="admin-input" />
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-2 rounded-xl bg-cream-100 p-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/40">Utilidad por unidad</p>
+                    <p className={`mt-1 font-display text-xl leading-none ${draftProfit < 0 ? "text-red-600" : "text-jungle-800"}`}>
+                      {formatCOP(draftProfit)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/40">Margen de ganancia</p>
+                    <p className={`mt-1 font-display text-xl leading-none ${draftMargin < 0 ? "text-red-600" : "text-jungle-800"}`}>
+                      {draftMargin.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest text-ink/40">Ganancia total (stock)</p>
+                    <p className="mt-1 font-display text-xl leading-none">
+                      {formatCOP(draftProfit * (Number(draft.stock) || 0))}
+                    </p>
                   </div>
                 </div>
               </section>
@@ -500,15 +538,23 @@ function ProductRow({
 }: {
   product: Product;
   busy: boolean;
-  onSave: (patch: { price: number; stock: number }) => void;
+  onSave: (patch: { price: number; cost: number; stock: number }) => void;
   onToggle: (patch: { active?: boolean; featured?: boolean }) => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const [price, setPrice] = useState(String(product.price));
+  const [cost, setCost] = useState(String(product.cost ?? 0));
   const [stock, setStock] = useState(String(product.stock));
 
-  const dirty = Number(price) !== product.price || Number(stock) !== product.stock;
+  const priceNumber = Number(price) || 0;
+  const costNumber = Number(cost) || 0;
+  const profit = priceNumber - costNumber;
+  const margin = priceNumber > 0 ? (profit / priceNumber) * 100 : 0;
+  const dirty =
+    priceNumber !== product.price ||
+    costNumber !== (product.cost ?? 0) ||
+    Number(stock) !== product.stock;
 
   return (
     <tr className={busy ? "opacity-50" : ""}>
@@ -544,6 +590,34 @@ function ProductRow({
         </div>
       </td>
       <td>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-ink/35">$</span>
+          <input
+            type="number"
+            min={0}
+            step={100}
+            value={cost}
+            onChange={(event) => setCost(event.target.value)}
+            className="w-24 rounded-md border border-ink/10 px-2 py-1.5 text-[11px] focus:border-jungle-500 focus:outline-none"
+            aria-label={`Costo de ${product.name}`}
+          />
+        </div>
+      </td>
+      <td>
+        <span
+          className={`badge ${
+            profit < 0
+              ? "bg-red-100 text-red-700"
+              : margin >= 40
+                ? "bg-jungle-50 text-jungle-700"
+                : "bg-sun-100 text-yellow-800"
+          }`}
+          title={`Utilidad por unidad: ${formatCOP(profit)}`}
+        >
+          {margin.toFixed(0)}%
+        </span>
+      </td>
+      <td>
         <input
           type="number"
           min={0}
@@ -570,7 +644,7 @@ function ProductRow({
         <div className="flex items-center justify-end gap-1">
           {dirty && (
             <button
-              onClick={() => onSave({ price: Number(price) || 0, stock: Math.max(0, Number(stock) || 0) })}
+              onClick={() => onSave({ price: Number(price) || 0, cost: Math.max(0, Number(cost) || 0), stock: Math.max(0, Number(stock) || 0) })}
               className="flex h-8 w-8 items-center justify-center rounded-md bg-jungle-700 text-white transition hover:bg-jungle-600"
               title="Guardar precio y stock"
             >

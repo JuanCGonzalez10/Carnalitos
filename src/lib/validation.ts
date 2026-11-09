@@ -48,6 +48,7 @@ export const productSchema = z.object({
   shortDescription: z.string().max(300).optional().default(""),
   description: z.string().max(6000).optional().default(""),
   price: z.coerce.number().min(0).max(100_000_000),
+  cost: z.coerce.number().min(0).max(100_000_000).optional().default(0),
   compareAtPrice: optionalNullableMoney,
   stock: z.coerce.number().int().min(0).max(1_000_000).optional().default(0),
   sku: z.string().max(60).optional().default(""),
@@ -65,6 +66,7 @@ export const productSchema = z.object({
 export const productQuickUpdateSchema = z
   .object({
     price: z.coerce.number().min(0).max(100_000_000).optional(),
+    cost: z.coerce.number().min(0).max(100_000_000).optional(),
     stock: z.coerce.number().int().min(0).max(1_000_000).optional(),
     active: z.boolean().optional(),
     featured: z.boolean().optional(),

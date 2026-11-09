@@ -17,8 +17,12 @@ const PRODUCT_FIELDS = `
   p.active, p.featured, p.sort_order as \`sortOrder\`, p.created_at as \`createdAt\`
 `;
 
+// El costo es información interna: solo se incluye en consultas de administración.
+const PRODUCT_FIELDS_WITH_COST = `${PRODUCT_FIELDS}, p.cost`;
+
 type ProductQuery = {
   includeInactive?: boolean;
+  includeCost?: boolean;
   categorySlug?: string;
   search?: string;
   sort?: string;
@@ -144,7 +148,7 @@ export async function listProducts(options: ProductQuery = {}): Promise<Product[
   const limit = options.limit ? `limit ${Math.max(1, Math.min(100, options.limit))}` : "";
 
   return query<Product>(
-    `select ${PRODUCT_FIELDS}
+    `select ${options.includeCost ? PRODUCT_FIELDS_WITH_COST : PRODUCT_FIELDS}
      from products p
      left join categories c on c.id = p.category_id
      ${where.length ? `where ${where.join(" and ")}` : ""}
@@ -179,7 +183,7 @@ export async function listBestSellers(limit = 4): Promise<Product[]> {
 
 export async function getProductById(id: string, includeInactive = true): Promise<Product | null> {
   return queryOne<Product>(
-    `select ${PRODUCT_FIELDS}
+    `select ${PRODUCT_FIELDS_WITH_COST}
      from products p left join categories c on c.id = p.category_id
      where p.id = ? ${includeInactive ? "" : "and p.active = 1"}`,
     [id],
@@ -221,9 +225,9 @@ export async function createProduct(input: Record<string, unknown>): Promise<Pro
   const id = randomUUID();
   await query(
     `insert into products
-      (id, slug, name, category_id, short_description, description, price, compare_at_price,
+      (id, slug, name, category_id, short_description, description, price, cost, compare_at_price,
        stock, sku, unit, weight, pet_type, benefits, ingredients, image, active, featured, sort_order)
-     values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       input.slug,
@@ -232,6 +236,7 @@ export async function createProduct(input: Record<string, unknown>): Promise<Pro
       input.shortDescription ?? "",
       input.description ?? "",
       input.price ?? 0,
+      input.cost ?? 0,
       input.compareAtPrice ?? null,
       input.stock ?? 0,
       input.sku ?? "",
@@ -256,6 +261,7 @@ const PRODUCT_UPDATE_FIELDS: Record<string, string> = {
   shortDescription: "short_description",
   description: "description",
   price: "price",
+  cost: "cost",
   compareAtPrice: "compare_at_price",
   stock: "stock",
   sku: "sku",

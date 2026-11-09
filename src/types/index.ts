@@ -37,6 +37,7 @@ export interface Product {
   description: string;
   price: number;
   compareAtPrice: number | null;
+  cost?: number;
   stock: number;
   sku: string;
   unit: string;
@@ -57,6 +58,7 @@ export interface OrderItem {
   productId: string | null;
   productName: string;
   unitPrice: number;
+  unitCost?: number;
   quantity: number;
   total: number;
   image: string;

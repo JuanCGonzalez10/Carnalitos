@@ -27,7 +27,10 @@ const NAV: Array<{ label: string; items: Array<{ href: string; label: string; ic
   },
   {
     label: "Análisis",
-    items: [{ href: "/admin/reportes", label: "Reportes", icon: "chart" }],
+    items: [
+      { href: "/admin/reportes", label: "Reportes", icon: "chart" },
+      { href: "/admin/contabilidad", label: "Contabilidad", icon: "invoice" },
+    ],
   },
   {
     label: "Sistema",
@@ -44,6 +47,7 @@ function sectionTitle(pathname: string): string {
     "/admin/productos": "Productos",
     "/admin/categorias": "Categorías",
     "/admin/reportes": "Reportes",
+    "/admin/contabilidad": "Contabilidad",
     "/admin/configuracion": "Configuración",
   };
   if (map[pathname]) return map[pathname];
