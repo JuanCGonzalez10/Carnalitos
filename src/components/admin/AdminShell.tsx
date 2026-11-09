@@ -13,6 +13,7 @@ const NAV: Array<{ label: string; items: Array<{ href: string; label: string; ic
     label: "Operación",
     items: [
       { href: "/admin", label: "Panel", icon: "dashboard" },
+      { href: "/admin/caja", label: "Caja registradora", icon: "money" },
       { href: "/admin/pedidos", label: "Pedidos", icon: "package" },
       { href: "/admin/mensajes", label: "Mensajes", icon: "mail" },
     ],
@@ -37,6 +38,7 @@ const NAV: Array<{ label: string; items: Array<{ href: string; label: string; ic
 function sectionTitle(pathname: string): string {
   const map: Record<string, string> = {
     "/admin": "Panel general",
+    "/admin/caja": "Caja registradora",
     "/admin/pedidos": "Pedidos",
     "/admin/mensajes": "Mensajes",
     "/admin/productos": "Productos",

@@ -132,6 +132,11 @@ export default function OrdersManager({
                     <Link href={`/admin/pedidos/${order.id}`} className="font-mono text-[11px] font-bold text-jungle-800 hover:underline">
                       {order.code}
                     </Link>
+                    {order.code.startsWith("POS-") && (
+                      <span className="ml-1.5 rounded bg-lime-100 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-jungle-800">
+                        POS
+                      </span>
+                    )}
                     <p className="mt-0.5 text-[10px] text-ink/40">{order.itemsCount ?? 0} artículo{order.itemsCount === 1 ? "" : "s"}</p>
                   </td>
                   <td>

@@ -47,7 +47,10 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin/productos?nuevo=1" className="btn-dark btn-sm">
+          <Link href="/admin/caja" className="btn-dark btn-sm">
+            <Icon name="money" className="h-3.5 w-3.5" /> Caja registradora
+          </Link>
+          <Link href="/admin/productos?nuevo=1" className="btn-outline btn-sm">
             <Icon name="plus" className="h-3.5 w-3.5" /> Nuevo producto
           </Link>
           <Link href="/admin/pedidos" className="btn-outline btn-sm">

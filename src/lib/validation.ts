@@ -108,6 +108,15 @@ export const orderCreateSchema = z
     }
   });
 
+export const posSaleSchema = z.object({
+  items: z.array(orderItemSchema).min(1, "Agrega al menos un producto").max(100),
+  paymentMethod: z.enum(["cash", "nequi", "bancolombia", "card", "transfer"]).default("cash"),
+  received: z.coerce.number().min(0).max(100_000_000).optional().default(0),
+  customerName: z.string().max(120).optional().default(""),
+  customerPhone: z.string().max(30).optional().default(""),
+  notes: z.string().max(500).optional().default(""),
+});
+
 export const orderUpdateSchema = z.object({
   status: z.enum(["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"]).optional(),
   paymentStatus: z.enum(["unpaid", "paid", "refunded"]).optional(),

@@ -166,6 +166,156 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   return (await getOrderById(createdOrderId))!;
 }
 
+export interface PosSaleInput {
+  items: Array<{ productId: string; quantity: number }>;
+  paymentMethod: "cash" | "nequi" | "bancolombia" | "card" | "transfer";
+  received: number;
+  customerName: string;
+  customerPhone: string;
+  notes: string;
+}
+
+function createPosCode(): string {
+  return `POS-${randomBytes(3).toString("hex").toUpperCase()}`;
+}
+
+/**
+ * Registra una venta presencial de la caja registradora.
+ * La venta entra al flujo normal de pedidos como pagada y entregada,
+ * descuenta stock y queda identificada con el prefijo POS-.
+ */
+export async function createPosSale(input: PosSaleInput): Promise<Order> {
+  let createdOrderId = "";
+
+  await withTransaction(async (connection) => {
+    const ids = [...new Set(input.items.map((item) => item.productId))];
+    const placeholders = ids.map(() => "?").join(",");
+    const [productRows] = await connection.query(
+      `select id, name, price, stock, image, active
+       from products where id in (${placeholders}) for update`,
+      ids,
+    );
+    const products = new Map(
+      (productRows as Array<{
+        id: string;
+        name: string;
+        price: number;
+        stock: number;
+        image: string;
+        active: boolean;
+      }>).map((row) => [row.id, row]),
+    );
+
+    const lines = input.items.map((item) => {
+      const product = products.get(item.productId);
+      if (!product) throw new OrderError("Uno de los productos ya no está disponible.");
+      if (!product.active) throw new OrderError(`"${product.name}" no está disponible por el momento.`);
+      if (product.stock < item.quantity) {
+        throw new OrderError(
+          `Solo quedan ${product.stock} unidad${product.stock === 1 ? "" : "es"} de "${product.name}".`,
+        );
+      }
+      return {
+        product,
+        quantity: item.quantity,
+        total: Number(product.price) * item.quantity,
+      };
+    });
+
+    const subtotal = lines.reduce((sum, line) => sum + line.total, 0);
+    const total = subtotal;
+
+    if (input.paymentMethod === "cash" && input.received + 0.001 < total) {
+      throw new OrderError("El efectivo recibido es menor al total a pagar.");
+    }
+
+    const change =
+      input.paymentMethod === "cash" ? Math.max(0, Math.round((input.received - total) * 100) / 100) : 0;
+    const code = createPosCode();
+    createdOrderId = randomUUID();
+
+    const cashNote =
+      input.paymentMethod === "cash"
+        ? `Efectivo recibido: ${input.received.toFixed(2)}. Cambio: ${change.toFixed(2)}.`
+        : "";
+    const saleNotes = [input.notes.trim(), cashNote].filter(Boolean).join(" ");
+
+    await connection.query(
+      `insert into orders
+        (id, code, customer_name, customer_email, customer_phone, delivery_method,
+         address, city, notes, subtotal, shipping, total, status,
+         payment_method, payment_status, admin_notes)
+       values (?,?,?,?,?,'pickup','','Medellín',?,?,0,?,'delivered',?,'paid',?)`,
+      [
+        createdOrderId,
+        code,
+        input.customerName.trim() || "Cliente en tienda",
+        "pos@carnalitosbakery.com",
+        input.customerPhone.trim(),
+        saleNotes,
+        subtotal,
+        total,
+        input.paymentMethod,
+        "Venta física registrada en caja registradora.",
+      ],
+    );
+
+    for (const line of lines) {
+      await connection.query(
+        `insert into order_items
+          (id, order_id, product_id, product_name, unit_price, quantity, total, image)
+         values (?,?,?,?,?,?,?,?)`,
+        [
+          randomUUID(),
+          createdOrderId,
+          line.product.id,
+          line.product.name,
+          line.product.price,
+          line.quantity,
+          line.total,
+          line.product.image,
+        ],
+      );
+      await connection.query(
+        "update products set stock = stock - ?, updated_at = now() where id = ?",
+        [line.quantity, line.product.id],
+      );
+    }
+  });
+
+  return (await getOrderById(createdOrderId))!;
+}
+
+export interface PosTodaySummary {
+  count: number;
+  total: number;
+  recent: Order[];
+}
+
+export async function getPosTodaySummary(): Promise<PosTodaySummary> {
+  const [totals, recent] = await Promise.all([
+    queryOne<{ count: number; total: number }>(
+      `select count(*) as \`count\`, coalesce(sum(total), 0) as total
+       from orders
+       where code like 'POS-%' and status <> 'cancelled' and created_at >= curdate()`,
+    ),
+    query<Order>(
+      `select ${ORDER_FIELDS},
+         (select coalesce(sum(quantity), 0) from order_items where order_id = orders.id) as \`itemsCount\`
+       from orders
+       where code like 'POS-%' and created_at >= curdate()
+       order by created_at desc
+       limit 8`,
+    ),
+  ]);
+
+  return {
+    count: totals?.count ?? 0,
+    total: totals?.total ?? 0,
+    recent,
+  };
+}
+
 export async function getOrderByCode(code: string): Promise<Order | null> {
   const order = await queryOne<Order>(
     `select ${ORDER_FIELDS} from orders where upper(code) = upper(?)`,
